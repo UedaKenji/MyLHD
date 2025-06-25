@@ -127,3 +127,7 @@ CTSfosc_*.png
 # OS specific
 .DS_Store
 Thumbs.db
+
+# Environment and package management files (local development only)
+environment.yml
+poetry_example.toml
