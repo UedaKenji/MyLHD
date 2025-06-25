@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-MyLHD is a Python package for collecting and analyzing data from the Large Helical Device (LHD) plasma physics experiment. The package provides tools for data retrieval from LABCOM systems and specialized analysis utilities.
+mylhd is a Python package for collecting and analyzing data from the Large Helical Device (LHD) plasma physics experiment. The package provides tools for data retrieval from LABCOM systems and specialized analysis utilities.
 
 ## Architecture
 

@@ -1,4 +1,4 @@
-import labcom_retrieve 
+from ..labcom_retrieve import LHDRetriever
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import stft
@@ -6,7 +6,7 @@ from scipy.fft import fft, fftfreq
 import argparse
 import time
 
-retriever = labcom_retrieve.LHDRetriever()
+retriever = LHDRetriever()
 
 def average_spectrum(data, n,fs):
     N = len(data)
