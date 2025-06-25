@@ -146,7 +146,7 @@ def plot_with_marginals(
     return fig, axes
 
 
-def save_plot(shot_num:int = None, diag:str='CTSfosc1', subshot:int=1, channel:int=1, 
+def plot_all(shot_num:int = None, diag:str='CTSfosc1', subshot:int=1, channel:int=1, 
               t0:float = 0, f0:float = 0):
     """
     Save the spectrogram plot for a given shot number, diagnostic, subshot, and channel.
