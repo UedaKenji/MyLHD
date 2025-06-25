@@ -4,10 +4,10 @@ CTS Utilities Package
 Collective Thomson Scattering (CTS) analysis tools and utilities for LHD data.
 """
 
-from .CTSfosc_viewer import save_plot, plot_with_marginals, average_spectrum
+from .CTSfosc_viewer import plot_all, plot_with_marginals, average_spectrum
 
 __all__ = [
-    "save_plot",
+    "plot_all",
     "plot_with_marginals", 
     "average_spectrum"
 ]
