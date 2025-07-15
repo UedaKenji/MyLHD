@@ -128,20 +128,20 @@ tmp*.dat
 CTSfosc_*.png
 
 # Test directory outputs (keep directory structure but ignore generated files)
-test/*.dat
-test/*.prm
-test/*.time
-test/*.tprm
-test/*.tmp
-test/*.png
-test/*.jpg
-test/*.pdf
-test/*.csv
-test/*.txt
-test/retrieve_*
-test/tmp*
-test/output_*
-test/result_*
+test_claude/*.dat
+test_claude/*.prm
+test_claude/*.time
+test_claude/*.tprm
+test_claude/*.tmp
+test_claude/*.png
+test_claude/*.jpg
+test_claude/*.pdf
+test_claude/*.csv
+test_claude/*.txt
+test_claude/retrieve_*
+test_claude/tmp*
+test_claude/output_*
+test_claude/result_*
 
 # OS specific
 .DS_Store

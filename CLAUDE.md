@@ -12,7 +12,7 @@ mylhd is a Python package for collecting and analyzing data from the Large Helic
 - `anadata.py`: Core module for LHD kaiseki data format parsing and retrieval from open data servers
 - `labcom_retrieve/`: Package for retrieving measurement data from LABCOM systems via Retrieve.exe
 - `cts_utls/`: CTS (Collective Thomson Scattering) analysis tools and utilities
-- `test/`: Directory for all testing files, test scripts, and test results
+- `test_claude/`: Directory for all testing files, test scripts, and test results
 
 ### Key Components
 
@@ -77,14 +77,14 @@ multi_data = retriever.retrieve_multiple_channels('Mag', 139400, 1, [1,2,3,4])
 ## Testing Guidelines
 
 ### Test Directory Structure
-All testing-related files should be created in the `test/` directory:
+All testing-related files should be created in the `test_claude/` directory:
 - Test scripts: Python files for testing package functionality
 - Test data: Sample data files for testing
 - Test results: Output files, plots, and analysis results from tests
 - Temporary files: Any temporary files generated during testing
 
 ### Testing Best Practices
-- Use the `test/` directory for all testing activities
+- Use the `test_claude/` directory for all testing activities
 - Create descriptive test file names with clear purpose
 - Clean up temporary files after testing when possible
 - Document test procedures and expected outcomes
