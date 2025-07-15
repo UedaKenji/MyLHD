@@ -112,6 +112,9 @@ dmypy.json
 *.swo
 *~
 
+# Claude Code configuration
+CLAUDE.md
+
 # LHD/LABCOM specific temporary files
 *.dat
 *.prm
@@ -123,6 +126,22 @@ tmp*.dat
 
 # CTS output files
 CTSfosc_*.png
+
+# Test directory outputs (keep directory structure but ignore generated files)
+test/*.dat
+test/*.prm
+test/*.time
+test/*.tprm
+test/*.tmp
+test/*.png
+test/*.jpg
+test/*.pdf
+test/*.csv
+test/*.txt
+test/retrieve_*
+test/tmp*
+test/output_*
+test/result_*
 
 # OS specific
 .DS_Store
