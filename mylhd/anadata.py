@@ -10,6 +10,7 @@ import urllib3
 import traceback
 import re
 import numpy as np
+import pandas as pd
 
 BASEURL="https://exp.lhd.nifs.ac.jp/opendata/LHD/webapi.fcgi?cmd=getfile&diag=%s&shotno=%d&subno=%d"
 
@@ -58,7 +59,11 @@ def retrieve_opendata(diag, shotno, subno=1):
     
     
     return data
-        
+
+time_names = ['Time', 'time','Time(s)', 'time(s)', 't(s)', 'T(s)']    
+freq_names = ['Frequency', 'freq', 'Freq', 'frequency']
+r_names    = ['R', 'r', 'R(m)', 'r(m)', 'R(m)', 'r(m)']
+
     
 class KaisekiData:
     """
@@ -232,15 +237,41 @@ class KaisekiData:
 
             self.data = data.reshape(tuple(self.dimsizes)+(-1,))
 
-            self.dimname_idx = {}
-            for idx, n in enumerate(self.dimnames):
-                self.dimname_idx[n] = idx
-            self.valname_idx = {}
-            for idx, n in enumerate(self.valnames):
-                self.valname_idx[n] = idx
+            self._init()
+
+
 
         except:
             raise Exception("Illegal Format")
+    
+    def _init(self):
+    
+        self.dimname_idx = {}
+        for idx, n in enumerate(self.dimnames):
+            self.dimname_idx[n] = idx
+        self.valname_idx = {}
+        for idx, n in enumerate(self.valnames):
+            self.valname_idx[n] = idx
+
+        self.time_key = None
+        for n in self.dimnames:
+            if n in time_names:
+                self.time_key = n
+                break
+        self.freq_key = None
+        for n in self.valnames:
+            if n in freq_names:
+                self.freq_key = n
+                break
+        self.r_key = None
+        for n in self.dimnames:
+            if n in r_names:
+                self.r_key = n
+                break
+
+
+        
+
 
     def get_dim_data(self, id:int|str) -> np.ndarray:
         """
@@ -308,7 +339,7 @@ class KaisekiData:
             raise Exception("Index Range Error id=" +id)
         
         return self.valunits[n]
-        
+    
         
     def get_dim_size(self, id:int|str) -> int:
         """
@@ -325,9 +356,97 @@ class KaisekiData:
             raise Exception("Index Range Error id=" +id)
         
         return self.dimsizes[n]
+    
+    val_unit = get_val_unit
+    dim_unit = get_dim_unit
+    val_data = get_val_data
+    dim_data = get_dim_data
+    
+    @property
+    def time(self) -> np.ndarray:
+        """
+        get time data as 1-D array.
+        """
+        #self._time が存在するか？
+        if hasattr(self, '_time'):
+            return self._time
+        elif self.time_key is None:
+            raise Exception("Time Key Not Found")
+        else:
+            return self.get_dim_data(self.time_key)
+    
+    def convert_key(self, key):
+        """
+        convert key to index or name
+        key : tuple of (dim0, dim1, dim2, ..., val)
+        """
+        if key in time_names: 
+            return self.time_key
         
+        elif key in freq_names: 
+            return self.freq_key
+        
+        elif key in r_names: 
+            return self.r_key
+
+        else:
+            return key
+
+
+    
     def __str__(self):
         s = "Name:{}\nShotNo:{}\nSubNo:{}\nDims={}\nVals={}\nData Size:{}".format(
             self.name, self.shotno, self.subno, self.dimnames, self.valnames, self.data.shape)
         return s
+    
+    def __getitem__(self, key):
+        """
+        get data by key
+        key : tuple of (dim0, dim1, dim2, ..., val)
+        """
+
+        if isinstance(key, int):
+            return self.get_val_data(key)
+        elif isinstance(key, str):
+            key = self.convert_key(key)
+            if key in self.dimname_idx:
+                return self.get_dim_data(key)
+            elif key in self.valname_idx:
+                return self.get_val_data(key)
+            else:
+                raise Exception("Illegal Key Type")
+        else:
+            raise Exception("Illegal Key Type")
+    
+    def show(self):
+        
+        """
+        print information of Kaiseki Data
+        """
+        print(f'#name: {self.name}  #shotno: {self.shotno}  #subno: {self.subno}  #date: {self.date}')
+        print(f'Data Shape: {self.data.shape}')
+        #printするとき、一行目にdimnamesと２行目にdimunitsのリスト表示するが、その際、それぞれカンマが同じ位置になるように調整する。
+        # 各セルを文字列としてクォート付きに変換
+        rows = [self.dimnames, self.dimunits]
+        quoted_rows = [[f"'{cell}'" for cell in row] for row in rows]
+
+        # 列ごとの最大幅を計算（クォート込み）
+        col_widths = [max(len(row[i]) for row in quoted_rows) for i in range(len(quoted_rows[0]))]
+
+        # 整形して出力
+        formatted = ", ".join(f"{cell:<{col_widths[i]}}" for i, cell in enumerate(quoted_rows[0]))
+        print( f'dimnames:  {formatted}')
+        formatted = ", ".join(f"{cell:<{col_widths[i]}}" for i, cell in enumerate(quoted_rows[1]))
+        print( f'dimunits:  {formatted}')
+
+        rows = [self.valnames, self.valunits]
+        quoted_rows = [[f"'{cell}'" for cell in row] for row in rows]
+        col_widths = [max(len(row[i]) for row in quoted_rows) for i in range(len(quoted_rows[0]))]
+        formatted = ", ".join(f"{cell:<{col_widths[i]}}" for i, cell in enumerate(quoted_rows[0]))
+        print( f'valnames:  {formatted}')   
+        formatted = ", ".join(f"{cell:<{col_widths[i]}}" for i, cell in enumerate(quoted_rows[1]))
+        print( f'valunits:  {formatted}')
+
+
+    
 

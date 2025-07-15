@@ -99,13 +99,34 @@ class LHDData:
         except ImportError:
             raise ImportError("matplotlib is required for plotting")
         
-        plt.figure(figsize=kwargs.get('figsize', (10, 6)))
-        plt.plot(self.time, self.data, **kwargs)
-        plt.xlabel('Time')
-        plt.ylabel(f'{self.description} [{self.units}]' if self.units else self.description)
-        plt.title(f"Shot {self.metadata.get('shot', 'Unknown')}")
-        plt.grid(True)
-        plt.show()
+        fig,ax = plt.subplots(figsize=kwargs.get('figsize', (10, 6)))
+        ax.plot(self.time, self.val, **kwargs)
+        ax.set_xlabel('Time')
+        ax.set_ylabel(f'{self.description} [{self.units}]' if self.units else self.description)
+        ax.set_title(f"Shot {self.metadata.get('shot', 'Unknown')}")
+        ax.grid(True)
+        if 'legend' in kwargs:
+            ax.legend(kwargs['legend'])
+        if 'xlim' in kwargs:
+            ax.set_xlim(kwargs['xlim'])
+        if 'ylim' in kwargs:
+            ax.set_ylim(kwargs['ylim'])
+        if 'title' in kwargs:
+            ax.set_title(kwargs['title'])
+        if 'savefig' in kwargs:
+            fig.savefig(kwargs['savefig'], bbox_inches='tight')
+        if 'show' in kwargs and kwargs['show']:
+            plt.show()
+
+        return fig,ax 
+        
+        #plt.figure(figsize=kwargs.get('figsize', (10, 6)))
+        #plt.plot(self.time, self.data, **kwargs)
+        #plt.xlabel('Time')
+        #plt.ylabel(f'{self.description} [{self.units}]' if self.units else self.description)
+        #plt.title(f"Shot {self.metadata.get('shot', 'Unknown')}")
+        #plt.grid(True)
+        #plt.show()
 
 
 class LHDRetriever:
@@ -241,8 +262,8 @@ class LHDRetriever:
     def retrieve_data(self, 
                      diag_name: str,
                      shot: int, 
-                     subshot: int,
-                     channel: int, 
+                     subshot: int = 1,
+                     channel: int = 1, 
                      time_axis: bool = False,
                      frame_number: Optional[int] = None,
                      dtype: Optional[Union[str, np.dtype]] = None) -> LHDData:
@@ -425,8 +446,8 @@ class LHDRetriever:
     def retrieve_multiple_channels(self, 
                                   diag_name: str,
                                   shot: int,
-                                  subshot: int,
-                                  channels: List[int],
+                                  subshot: int = 1,
+                                  channels: List[int] = [1],
                                   time_axis: bool = True) -> Dict[int, LHDData]:
         """
         Retrieve data for multiple channels from the same shot.
