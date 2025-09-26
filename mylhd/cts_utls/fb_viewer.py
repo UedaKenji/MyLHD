@@ -12,13 +12,17 @@ import os
 import sys
 
 
-
+ 
 plt.rcParams["font.size"] = 12 # 全体のフォントサイズが変更されます。
 plt.rcParams["xtick.direction"] = "in"      # 目盛り線の向き、内側"in"か外側"out"かその両方"inout"か
 plt.rcParams["ytick.direction"] = "in" 
 
-mwscat_freq =  [None,None,None,None,None,None,None,None,500 ,900 ,1300,1500,1700,1800,1900,2000,2100,2200,2300,2400,2500,2600,2700,2800,2825,2875,2925,2975,3025,3075,3125,3175]
-mwscat2_freq = [3200,3300,3400,3500,3600,3700,3800,3900,4000,4100,4200,4300,4500,4700,5100,5500,None,None,1000,1300,None,None,None,None,None,None,None,None,None,None,None,None]
+mwscat_freq_wrong =  [None,None,None,None,None,None,None,None,500 ,900 ,1300,1500,1700,1800,1900,2000,2100,2200,2300,2400,2500,2600,2700,2800,2825,2875,2925,2975,3025,3075,3125,3175]
+mwscat2_freq_wrong = [3200,3300,3400,3500,3600,3700,3800,3900,4000,4100,4200,4300,4500,4700,5100,5500,None,None,1000,1300,None,None,None,None,None,None,None,None,None,None,None,None]
+
+
+mwscat_freq       =  [None,None,None,None,None,None,None,None,500 ,900 ,1300,1500,1700,1800,1900,2000,2100,2200,2300,2400,2500,2600,2700,2800,3200,3300,3400,3500,3600,3700,3800,3900]
+mwscat2_freq       = [4000,4100,4200,4300,4500,4700,5100,5500,2825,2875,2925,2975,3025,3075,3125,3175,None,None,1000,1300,None,None,None,None,None,None,None,None,None,None,None,None]
 
 freq_list = {}
 freq_list['mwscat']  = mwscat_freq
@@ -39,9 +43,11 @@ def get_latest_shot_num(shot_num_start):
         The latest shot number.
     """
     shot_num = shot_num_start
+    retriever = LHDRetriever()
     while True:
         try:
-            KaisekiData.retrieve('mwscat',shot_num,1,1)
+            #print('checking shot_num:',shot_num)
+            retriever.retrieve_data('mwscat',shot_num,1,1)
             shot_num += 1
         except:
             break
@@ -50,7 +56,7 @@ def get_latest_shot_num(shot_num_start):
 #最新のshot_num までmwscatのデータをプロットして保存する。
 #プロット現在が最新に到達したら10秒待って再度チェックする。
 def plot_mwscat_all_latest(shot_num_start:int,shot_num_stop:int=None,save:bool=True,
-                           start_time:float=None,end_time:float=None):
+                           start_time:float=None,end_time:float=None,save_dir:str=''):  
     """
     Plot all channels of the latest mwscat data.
     
@@ -74,8 +80,8 @@ def plot_mwscat_all_latest(shot_num_start:int,shot_num_stop:int=None,save:bool=T
 
         elif shot_num_now <= shot_num_latest:
             print('plotting shot_num:',shot_num_now)
-            plot_mwscat_all(shot_num_now,'mwscat',save=save,plot_show=False,start_time=start_time,end_time=end_time)
-            plot_mwscat_all(shot_num_now,'mwscat2',save=save,plot_show=False, start_time=start_time,end_time=end_time)
+            plot_mwscat_all(shot_num_now,'mwscat',save=save,plot_show=False,start_time=start_time,end_time=end_time, save_dir=save_dir)
+            plot_mwscat_all(shot_num_now,'mwscat2',save=save,plot_show=False, start_time=start_time,end_time=end_time, save_dir=save_dir)
             shot_num_now += 1 
 
 
