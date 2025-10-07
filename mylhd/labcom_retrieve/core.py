@@ -165,7 +165,7 @@ class LHDRetriever:
             import os
             self.working_dir = os.path.dirname(os.path.abspath(self.retrieve_path))
         
-    def _run_retrieve(self, diag_name: str, shot_no: int, subshot_no: int, 
+    def _run_retrieve(self, diag: str, shotno: int, subshot_no: int, 
                      ch_no_name: int, file_prefix: Optional[str] = None, 
                      options: Optional[List[str]] = None) -> tuple:
         """
@@ -183,7 +183,7 @@ class LHDRetriever:
         Returns:
             tuple: (dat_file, prm_file, time_file) paths
         """
-        cmd = [self.retrieve_path, diag_name, str(shot_no), str(subshot_no), str(ch_no_name)]
+        cmd = [self.retrieve_path, diag, str(shotno), str(subshot_no), str(ch_no_name)]
         
         if file_prefix:
             cmd.append(file_prefix)
@@ -231,7 +231,7 @@ class LHDRetriever:
                     time_file = os.path.join(self.working_dir, f"{file_prefix}.time")
             else:
                 # Default naming when no prefix specified
-                base_name = f"{diag_name}_{shot_no}_{subshot_no}_{ch_no_name}"
+                base_name = f"{diag}_{shotno}_{subshot_no}_{ch_no_name}"
                 dat_file = os.path.join(self.working_dir, f"{base_name}.dat")
                 prm_file = os.path.join(self.working_dir, f"{base_name}.prm")
                 time_file = os.path.join(self.working_dir, f"{base_name}.time")
@@ -260,8 +260,8 @@ class LHDRetriever:
         return f"Retrieve {diag_name} {shot} {subshot} {channel} -T"
     
     def retrieve_data(self, 
-                     diag_name: str,
-                     shot: int, 
+                     diag: str,
+                     shotno: int, 
                      subshot: int = 1,
                      channel: int = 1, 
                      time_axis: bool = False,
@@ -271,8 +271,8 @@ class LHDRetriever:
         Retrieve measurement data using LHD Retrieve.exe format.
         
         Args:
-            diag_name: Diagnostic name (e.g., 'Mag', 'Magnetics')
-            shot: Shot number
+            diag: Diagnostic name (e.g., 'Mag', 'Magnetics')
+            shotno: Shot number
             subshot: Sub-shot number (usually 1)
             channel: Channel number
             time_axis: Generate time axis information (-T option)
@@ -290,12 +290,12 @@ class LHDRetriever:
             options.extend(['-f', str(frame_number)])
         
         # Generate unique file prefix
-        file_prefix = f"retrieve_{diag_name}_{shot}_{subshot}_{channel}"
+        file_prefix = f"retrieve_{diag}_{shotno}_{subshot}_{channel}"
         
         try:
             dat_file, prm_file, time_file = self._run_retrieve(
-                diag_name=diag_name,
-                shot_no=shot,
+                diag=diag,
+                shotno=shotno,
                 subshot_no=subshot,
                 ch_no_name=channel,
                 file_prefix=file_prefix,
@@ -309,8 +309,8 @@ class LHDRetriever:
                 data=data,
                 time=time,
                 metadata={
-                    'diag_name': diag_name,
-                    'shot': shot,
+                    'diag_name': diag,
+                    'shot': shotno,
                     'subshot': subshot,
                     'channel': channel,
                     'time_axis': time_axis,
@@ -318,7 +318,7 @@ class LHDRetriever:
                     'dtype': dtype,
                     **metadata
                 },
-                description=f"{diag_name} Shot {shot}.{subshot}, Channel {channel}"
+                description=f"{diag} Shot {shotno}.{subshot}, Channel {channel}"
             )
             
         finally:
@@ -479,8 +479,8 @@ class LHDRetriever:
                 
                 try:
                     dat_file, prm_file, time_file = self._run_retrieve(
-                        diag_name=diag_name,
-                        shot_no=shot,
+                        diag=diag_name,
+                        shotno=shot,
                         subshot_no=subshot,
                         ch_no_name=channel,
                         file_prefix=file_prefix,

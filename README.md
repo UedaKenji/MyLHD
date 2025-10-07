@@ -74,7 +74,7 @@ import mylhd
 retriever = mylhd.LHDRetriever()
 
 # Retrieve single channel data
-lhd_data = retriever.retrieve_data('Mag', shot=139400, subshot=1, channel=32, time_axis=True)
+lhd_data = retriever.retrieve_data(diag='Mag', shotno=139400, subshot=1, channel=32, time_axis=True)
 
 # Retrieve multiple channels
 multi_data = retriever.retrieve_multiple_channels('Mag', 139400, 1, [1,2,3,4])

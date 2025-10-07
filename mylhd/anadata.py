@@ -447,6 +447,12 @@ class KaisekiData:
         formatted = ", ".join(f"{cell:<{col_widths[i]}}" for i, cell in enumerate(quoted_rows[1]))
         print( f'valunits:  {formatted}')
 
+    def info(self):
+        """
+        print information of Kaiseki Data
+        """
+        self.show()
+
 
     
 

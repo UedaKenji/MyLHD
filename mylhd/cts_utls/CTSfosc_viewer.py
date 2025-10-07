@@ -170,8 +170,8 @@ def plot_all(shot_num:int = None, diag:str='CTSfosc1', subshot:int=1, channel:in
 
     print(f"Retrieving data for shot {shot_num}, diag {diag}, subshot {subshot}, channel {channel}...")
     data = retriever.retrieve_data(
-        diag_name=diag,
-        shot=shot_num,
+        diag=diag,
+        shotno=shot_num,
         subshot=subshot, 
         channel=channel,
         time_axis=False,
@@ -232,6 +232,84 @@ def plot_all(shot_num:int = None, diag:str='CTSfosc1', subshot:int=1, channel:in
         figsize=(12, 8),
     )
         
+    axes["main"].set_xlabel("Time [s]", fontsize=14)
+    axes["main"].set_ylabel("Frequency [GHz]", fontsize=14)
+    axes["cbar"].set_ylabel("Magnitude [dB]")
+    axes["bottom"].set_ylabel("Sig [V]")
+    axes["left"].set_xlabel("Spectral Magnitude [dB]")
+
+    fig.suptitle(f"# {shot_num}, diag {diag}, subshot {subshot}, channel {channel}", fontsize=16)
+
+    return fig, axes
+
+
+from scipy.signal import resample
+
+def plot_all2(shot_num:int = None, diag:str='CTSfosc1', subshot:int=1, channel:int=1, 
+              t0:float = 0, f0:float = 0):
+    
+    data = retriever.retrieve_data(
+        diag=diag,
+        shotno=shot_num,
+        subshot=subshot, 
+        channel=channel,
+        time_axis=False,
+        dtype=np.int8,  # ← int8ではなくfloatで
+    )
+    ...
+    fs = float(data.metadata['MIN_SAMPLE_RATE'])
+    f, t, Zxx = stft(
+        data.val,
+        fs=fs, 
+        window="hann",
+        nperseg=2**16,
+        noverlap=None,
+        boundary=None,
+        padded=False,
+    )
+
+    # ==== 縞が出ないように平均リサンプリング ====
+    max_pixels = (1500, 2000)  # (freq方向, time方向)
+    ny, nx = Zxx.shape
+    if ny > max_pixels[0]:
+        Zxx_r = resample(Zxx, max_pixels[0], axis=0)
+        f_r = np.linspace(f[0], f[-1], max_pixels[0])
+    else:
+        Zxx_r, f_r = Zxx, f
+
+    if nx > max_pixels[1]:
+        Zxx_r = resample(Zxx_r, max_pixels[1], axis=1)
+        t_r = np.linspace(t[0], t[-1], max_pixels[1])
+    else:
+        t_r = t
+    # ===============================================
+
+    n_segments = 10000
+    freq, spectrum = average_spectrum(data.val, n_segments, fs)
+
+    n_sparse = 100000
+    val_sparse = data.val[::n_sparse]
+    time_sparse = np.arange(len(val_sparse)) / fs * n_sparse
+
+    Zxx_db = 20 * np.log10(np.abs(Zxx_r) + 1e-12)
+    vmax = np.percentile(Zxx_db, 99.9)
+    vmin = np.percentile(Zxx_db, 30)
+
+    fig, axes = plot_with_marginals(
+        data2d=Zxx_db,
+        x=t_r + t0,
+        y=(f_r + f0) * 1e-9,
+        proj_x=20*np.log10(np.abs(spectrum)+1e-12)[1:],
+        proj_y=val_sparse,
+        y_for_proj_x=(freq[1:] + f0) * 1e-9,
+        x_for_proj_y=time_sparse + t0,
+        vmax=vmax,
+        vmin=vmin,
+        cmap='inferno',
+        width_ratios=(1, 4, 0.1),
+        height_ratios=(4, 1.5),
+        figsize=(12, 8),
+    )
     axes["main"].set_xlabel("Time [s]", fontsize=14)
     axes["main"].set_ylabel("Frequency [GHz]", fontsize=14)
     axes["cbar"].set_ylabel("Magnitude [dB]")

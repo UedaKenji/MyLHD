@@ -28,7 +28,7 @@ freq_list = {}
 freq_list['mwscat']  = mwscat_freq
 freq_list['mwscat2'] = mwscat2_freq
 
-def get_latest_shot_num(shot_num_start):
+def get_latest_shot_num(shotno_start):
     """
     Get the latest shot number.
     
@@ -42,7 +42,7 @@ def get_latest_shot_num(shot_num_start):
     int
         The latest shot number.
     """
-    shot_num = shot_num_start
+    shot_num = shotno_start
     retriever = LHDRetriever()
     while True:
         try:
@@ -55,7 +55,7 @@ def get_latest_shot_num(shot_num_start):
 
 #最新のshot_num までmwscatのデータをプロットして保存する。
 #プロット現在が最新に到達したら10秒待って再度チェックする。
-def plot_mwscat_all_latest(shot_num_start:int,shot_num_stop:int=None,save:bool=True,
+def plot_mwscat_all_latest(shotno_start:int,shotno_stop:int=None,save:bool=True,
                            start_time:float=None,end_time:float=None,save_dir:str=''):  
     """
     Plot all channels of the latest mwscat data.
@@ -68,12 +68,12 @@ def plot_mwscat_all_latest(shot_num_start:int,shot_num_stop:int=None,save:bool=T
         Save the plot if True.
         
     """
-    shot_num_now = shot_num_start
-    shot_num_latest = get_latest_shot_num(shot_num_start)
-    if shot_num_stop is None:
-        shot_num_stop = shot_num_latest 
+    shot_num_now = shotno_start
+    shot_num_latest = get_latest_shot_num(shotno_start)
+    if shotno_stop is None:
+        shotno_stop = shot_num_latest 
 
-    while shot_num_now < shot_num_stop:
+    while shot_num_now < shotno_stop:
         if shot_num_now > shot_num_latest:
             time.sleep(10)
             shot_num_latest = get_latest_shot_num(shot_num_now)
@@ -87,10 +87,10 @@ def plot_mwscat_all_latest(shot_num_start:int,shot_num_stop:int=None,save:bool=T
 
 
 def plot_mwscat_all(
-        shot_num:int, 
-        digi_name:str, # 'mwscat' or 'mwscat2'
+        shotno:int, 
+        digi:str, # 'mwscat' or 'mwscat2'
         start_time:float=None,
-        end_time:float=None,
+        end_time:float=None,    
         plot_show:bool =True,
         save:bool=False,
         save_dir:str='',
@@ -131,8 +131,8 @@ def plot_mwscat_all(
 
         ch_i = i+1
 
-        data =  retriever.retrieve_data(diag_name=digi_name, 
-                                          shot=shot_num, 
+        data =  retriever.retrieve_data(diag=digi, 
+                                          shotno=shotno, 
                                           subshot=1, 
                                           channel=ch_i,time_axis=True)
         val:np.ndarray  = data.get_val()
@@ -140,15 +140,15 @@ def plot_mwscat_all(
 
 
         if start_time is not None:
-            start_index = np.where(timedata0 > start_time)[0][0]
-            xmin = start_time
+            start_index = np.argmin(np.abs(timedata0 - start_time))
+            xmin = timedata0[start_index]
         else:
             start_index = None
             xmin = timedata0[0]
 
         if end_time is not None:
-            end_index = np.where(timedata0 > end_time)[0][0]
-            xmax = end_time
+            end_index = np.argmin(np.abs(timedata0 - end_time))
+            xmax = timedata0[end_index]
         else:
             end_index = None
             xmax = timedata0[-1]
@@ -159,7 +159,7 @@ def plot_mwscat_all(
  
         sl = slice(start_index,end_index,n)
         ax.plot(timedata0[sl],sig_voltdata[sl])
-        ax.set_title('ch'+str(i+1)+': ' +str(freq_list[digi_name][i])[:4]+' MHz')
+        ax.set_title('ch'+str(i+1)+': ' +str(freq_list[digi][i])[:4]+' MHz')
         ax.set_xlim(xmin,xmax)
 
         if icol == 7:
@@ -167,8 +167,11 @@ def plot_mwscat_all(
         if irow == 0:
             ax.set_ylabel('Signal [V]')
 
+        # 縦のグリッド線を追加
+        ax.grid(axis='x', linestyle='--', alpha=1,linewidth=1)
+
         
-    figname =str(shot_num)+'_'+digi_name
+    figname =str(shotno)+'_'+digi
     fig.tight_layout(rect=[0,0,1,0.96])
     fig.suptitle(figname,fontsize=25)
     if save:
@@ -213,8 +216,8 @@ def plot_mwscat_all2(
 
         ch_i = i+1
 
-        data =  retriever.retrieve_data(diag_name=digi_name, 
-                                          shot=shot_num, 
+        data =  retriever.retrieve_data(diag=digi_name, 
+                                          shotno=shot_num, 
                                           subshot=1, 
                                           channel=ch_i,time_axis=True)
         val:np.ndarray  = data.get_val()
@@ -461,7 +464,7 @@ def take_mwscat_all(shotno:int) -> KaisekiData:
         if key is not None:
             if flg:
                 try:
-                    temp = retriever.retrieve_data(diag_name='mwscat', shot=shotno, subshot=1, channel=i+1, time_axis=True)
+                    temp = retriever.retrieve_data(diag='mwscat', shotno=shotno, subshot=1, channel=i+1, time_axis=True)
                     data['Time'] = temp.time
                     flg = False        
                     data['Freq'].append(key)
@@ -472,7 +475,7 @@ def take_mwscat_all(shotno:int) -> KaisekiData:
 
             else:
                 try:
-                    temp = retriever.retrieve_data(diag_name='mwscat', shot=shotno, subshot=1, channel=i+1, time_axis=False)
+                    temp = retriever.retrieve_data(diag='mwscat', shotno=shotno, subshot=1, channel=i+1, time_axis=False)
                     data['Freq'].append(key)
                     data[key] = temp.val
                 except Exception as e:
@@ -483,7 +486,7 @@ def take_mwscat_all(shotno:int) -> KaisekiData:
     for i,key in enumerate(mwscat2_freq):
         if key is not None:
             try:
-                temp = retriever.retrieve_data(diag_name='mwscat2', shot=shotno, subshot=1, channel=i+1, time_axis=False)
+                temp = retriever.retrieve_data(diag='mwscat2', shotno=shotno, subshot=1, channel=i+1, time_axis=False)
                 data['Freq'].append(key)
                 data[key] = temp.val
             except:
@@ -511,7 +514,7 @@ if __name__ == '__main__':
         
     shotnum = 183644
     #shotnum = input('input shot number:')
-    plot_mwscat_all(shot_num=shotnum,digi_name='mwscat',start_time=2.5 , save=True,plot_show=False)
-    plot_mwscat_all(shot_num=shotnum,digi_name='mwscat2',start_time=2.5, save=True,plot_show=False)
+    plot_mwscat_all(shotno=shotnum,digi='mwscat',start_time=2.5 , save=True,plot_show=False)
+    plot_mwscat_all(shotno=shotnum,digi='mwscat2',start_time=2.5, save=True,plot_show=False)
 
     
