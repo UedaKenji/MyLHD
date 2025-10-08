@@ -452,6 +452,7 @@ class KaisekiData:
         print information of Kaiseki Data
         """
         self.show()
+        print(self.comment)
 
 
     
