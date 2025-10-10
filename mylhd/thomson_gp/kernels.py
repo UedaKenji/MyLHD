@@ -20,7 +20,7 @@ def KSE_dx(x0: np.ndarray, x1: np.ndarray, length: float) -> np.ndarray:
 def KSE_dxdx(x0: np.ndarray, x1: np.ndarray, length: float) -> np.ndarray:
     """Second derivative of the squared-exponential kernel."""
     X = np.meshgrid(x0, x1, indexing="ij")
-    return (-(X[0] - X[1]) ** 2 / length**4 + 1 / length**2) * np.exp(-0.5 * (X[0] - X[1]) ** 2 / length**2)
+    return (-((X[0] - X[1]) ** 2) / length**4 + 1 / length**2) * np.exp(-0.5 * (X[0] - X[1]) ** 2 / length**2)
 
 
 def KRQ(x0: np.ndarray, x1: np.ndarray, length: float, alpha: float) -> np.ndarray:
@@ -32,7 +32,7 @@ def KRQ(x0: np.ndarray, x1: np.ndarray, length: float, alpha: float) -> np.ndarr
 def KRQ_dx(x0: np.ndarray, x1: np.ndarray, length: float, alpha: float) -> np.ndarray:
     """First derivative of the rational quadratic kernel."""
     X = np.meshgrid(x0, x1, indexing="ij")
-    return -(1 + 0.5 * (X[0] - X[1]) ** 2 / length**2 / alpha) ** (-alpha - 1) * (X[0] - X[1]) / length**2
+    return -((1 + 0.5 * (X[0] - X[1]) ** 2 / length**2 / alpha) ** (-alpha - 1)) * (X[0] - X[1]) / length**2
 
 
 def Kmatern32(x0: np.ndarray, x1: np.ndarray, length: float) -> np.ndarray:

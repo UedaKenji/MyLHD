@@ -2,18 +2,18 @@
 
 from __future__ import annotations
 
-from scipy import interpolate
 import numpy as np
+from scipy import interpolate
 
 from .core import ThomsonGPCore
-from .visualize import ThomsonGPVisualizer
 from .utils import ThomsonGPUtils
-
+from .visualize import ThomsonGPVisualizer
 
 
 class ThomsonGP(ThomsonGPCore, ThomsonGPVisualizer, ThomsonGPUtils):
     """Facade class exposing both computational and visualization capabilities."""
 
     pass
+
 
 __all__ = ["ThomsonGP"]

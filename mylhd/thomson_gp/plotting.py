@@ -61,15 +61,43 @@ def plotGP(
 
     dx = x_plot[1] - x_plot[0]
     dy = y_plot[1] - y_plot[0]
-    extent = (x_plot.min() - 0.5 * dx, x_plot.max() + 0.5 * dx, y_plot.min() - 0.5 * dy, y_plot.max() + 0.5 * dy)
-    ax.imshow(density, vmin=0, vmax=1, extent=extent, cmap=alpha_cmap, origin="lower", aspect="auto", zorder=0)
+    extent = (
+        x_plot.min() - 0.5 * dx,
+        x_plot.max() + 0.5 * dx,
+        y_plot.min() - 0.5 * dy,
+        y_plot.max() + 0.5 * dy,
+    )
+    ax.imshow(
+        density,
+        vmin=0,
+        vmax=1,
+        extent=extent,
+        cmap=alpha_cmap,
+        origin="lower",
+        aspect="auto",
+        zorder=0,
+    )
 
     if n_sample > 0:
         samples = np.random.multivariate_normal(f_inp, K_inp, n_sample)
         for idx, sample in enumerate(samples):
-            ax.plot(x_inp, sample, color=color, alpha=0.5, lw=0.3, label="sample path" if idx == 0 else None)
+            ax.plot(
+                x_inp,
+                sample,
+                color=color,
+                alpha=0.5,
+                lw=0.3,
+                label="sample path" if idx == 0 else None,
+            )
 
-    ax.plot(x_inp, f_inp + sigma, color=color, linestyle="dashed", lw=1.0, label=r"$\pm 1\sigma$")
+    ax.plot(
+        x_inp,
+        f_inp + sigma,
+        color=color,
+        linestyle="dashed",
+        lw=1.0,
+        label=r"$\pm 1\sigma$",
+    )
     ax.plot(x_inp, f_inp - sigma, color=color, linestyle="dashed", lw=1.0)
 
 
@@ -108,16 +136,44 @@ def plotLogGP(
 
     dx = x_plot[1] - x_plot[0]
     dy = y_plot[1] - y_plot[0]
-    extent = (x_plot.min() - 0.5 * dx, x_plot.max() + 0.5 * dx, y_plot.min() - 0.5 * dy, y_plot.max() + 0.5 * dy)
-    ax.imshow(density, vmin=0, vmax=1, extent=extent, cmap=alpha_cmap, origin="lower", aspect="auto", zorder=0)
+    extent = (
+        x_plot.min() - 0.5 * dx,
+        x_plot.max() + 0.5 * dx,
+        y_plot.min() - 0.5 * dy,
+        y_plot.max() + 0.5 * dy,
+    )
+    ax.imshow(
+        density,
+        vmin=0,
+        vmax=1,
+        extent=extent,
+        cmap=alpha_cmap,
+        origin="lower",
+        aspect="auto",
+        zorder=0,
+    )
 
     if n_sample > 0:
         samples = np.random.multivariate_normal(f_inp, K_inp, n_sample)
         for idx, sample in enumerate(samples):
             values = np.exp(sample)
-            ax.plot(x_inp, values, color=color, alpha=0.5, lw=0.3, label="sample path" if idx == 0 else None)
+            ax.plot(
+                x_inp,
+                values,
+                color=color,
+                alpha=0.5,
+                lw=0.3,
+                label="sample path" if idx == 0 else None,
+            )
 
-    ax.plot(x_inp, np.exp(f_inp + sigma), color=color, linestyle="dashed", lw=1.0, label=r"$\pm 1\sigma$")
+    ax.plot(
+        x_inp,
+        np.exp(f_inp + sigma),
+        color=color,
+        linestyle="dashed",
+        lw=1.0,
+        label=r"$\pm 1\sigma$",
+    )
     ax.plot(x_inp, np.exp(f_inp - sigma), color=color, linestyle="dashed", lw=1.0)
 
 

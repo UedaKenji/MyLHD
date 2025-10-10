@@ -41,7 +41,7 @@ dev = [
     "pytest>=6.0",
     "pytest-cov>=2.0",
     "black>=21.0",
-    "flake8>=3.9",
+    "flake8>=7.0",
     "mypy>=0.910",
     "isort>=5.12",
 ]
@@ -61,7 +61,7 @@ include = ["mylhd*"]
 mylhd = ["*.md"]
 
 [tool.black]
-line-length = 88
+line-length = 120
 target-version = ['py37', 'py38', 'py39', 'py310', 'py311']
 include = '\.pyi?$'
 extend-exclude = '''
@@ -79,7 +79,7 @@ extend-exclude = '''
 '''
 
 [tool.flake8]
-max-line-length = 88
+max-line-length = 120
 extend-ignore = [
     "E203",  # whitespace before ':', conflicts with Black
     "W503",  # line break before binary operator, Black default
@@ -95,7 +95,7 @@ exclude = [
 
 [tool.isort]
 profile = "black"
-line_length = 88
+line_length = 120
 known_first_party = ["mylhd"]
 skip = [
     ".git",

@@ -1,21 +1,25 @@
-from ..labcom_retrieve import LHDRetriever
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.signal import stft
-from scipy.fft import fft, fftfreq
 import argparse
 import time
 
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.fft import fft, fftfreq
+from scipy.signal import stft
+
+from ..labcom_retrieve import LHDRetriever
+
 retriever = LHDRetriever()
 
-def average_spectrum(data, n,fs):
+
+def average_spectrum(data, n, fs):
     N = len(data)
     segment_length = N // n
-    segments = [data[i:i + segment_length] for i in range(0, N, segment_length)]
+    segments = [data[i : i + segment_length] for i in range(0, N, segment_length)]
     spectrum = np.array([fft(segment) for segment in segments])
-    freq = fftfreq(segment_length, d=1/fs)  # サンプリング周波数は12.5GHz
+    freq = fftfreq(segment_length, d=1 / fs)  # サンプリング周波数は12.5GHz
     avg_spectrum = np.mean(np.abs(spectrum), axis=0)
-    return freq[:segment_length // 2], avg_spectrum[:segment_length // 2]
+    return freq[: segment_length // 2], avg_spectrum[: segment_length // 2]
+
 
 def plot_with_marginals(
     data2d: np.ndarray,
@@ -30,7 +34,7 @@ def plot_with_marginals(
     wspace: float = 0.05,
     hspace: float = 0.05,
     figsize: tuple = (6, 6),
-    cmap: str = 'viridis',
+    cmap: str = "viridis",
     vmin: float = None,
     vmax: float = None,
 ):
@@ -71,64 +75,64 @@ def plot_with_marginals(
     """
     fig = plt.figure(figsize=figsize, constrained_layout=True)
     gs = fig.add_gridspec(
-        2, 3,
+        2,
+        3,
         width_ratios=width_ratios,
         height_ratios=height_ratios,
         wspace=wspace,
-        hspace=hspace
+        hspace=hspace,
     )
 
     # 左側プロット: 枠は左と下のみ、目盛りラベル無し
 
     # メインマップ
     ax_main = fig.add_subplot(gs[0, 1], sharex=None, sharey=None)
-    im = ax_main.pcolormesh(x, y, data2d, cmap=cmap, shading='auto', vmin=vmin, vmax=vmax)
-    ax_main.set_xlabel('X')
-    ax_main.set_ylabel('Y')
+    im = ax_main.pcolormesh(x, y, data2d, cmap=cmap, shading="auto", vmin=vmin, vmax=vmax)
+    ax_main.set_xlabel("X")
+    ax_main.set_ylabel("Y")
     ax_main.grid(True)
 
-    
     if y_for_proj_x is None:
         y_for_proj_x = y
     ax_left = fig.add_subplot(gs[0, 0], sharey=ax_main)
     ax_left.plot(proj_x, y_for_proj_x)
     ax_left.invert_xaxis()
     # スパイン設定
-    ax_left.spines['top'].set_visible(True)
-    ax_left.spines['right'].set_visible(True)
-    ax_left.spines['bottom'].set_visible(True)
-    ax_left.spines['left'].set_visible(False)
+    ax_left.spines["top"].set_visible(True)
+    ax_left.spines["right"].set_visible(True)
+    ax_left.spines["bottom"].set_visible(True)
+    ax_left.spines["left"].set_visible(False)
     # 目盛りとラベルを非表示
     ax_left.tick_params(left=False, bottom=True, labelleft=False, labelbottom=True)
-    ax_left.set_xlabel('Σ over X')
+    ax_left.set_xlabel("Σ over X")
     ax_left.grid(True)
 
     # カラーバー
     ax_cbar = fig.add_subplot(gs[0, 2])
-    cbar = fig.colorbar(im, cax=ax_cbar, orientation='vertical')
-    cbar.set_label('Value')
-    cbar.ax.yaxis.set_ticks_position('right')
-    cbar.ax.yaxis.set_label_position('right')
+    cbar = fig.colorbar(im, cax=ax_cbar, orientation="vertical")
+    cbar.set_label("Value")
+    cbar.ax.yaxis.set_ticks_position("right")
+    cbar.ax.yaxis.set_label_position("right")
 
     # 下側プロット
     if x_for_proj_y is None:
         x_for_proj_y = x
     ax_bottom = fig.add_subplot(gs[1, 1], sharex=ax_main)
     ax_bottom.plot(x_for_proj_y, proj_y)
-    #ax_bottom.set_xlabel('X')
+    # ax_bottom.set_xlabel('X')
     ax_bottom.tick_params(left=False, bottom=False, labelleft=True, labelbottom=False)
-    ax_bottom.set_ylabel('Σ over Y')
+    ax_bottom.set_ylabel("Σ over Y")
     # スパイン設定
-    ax_bottom.spines['top'].set_visible(True)
-    ax_bottom.spines['right'].set_visible(True)
-    ax_bottom.spines['bottom'].set_visible(False)
-    ax_bottom.spines['left'].set_visible(True)
+    ax_bottom.spines["top"].set_visible(True)
+    ax_bottom.spines["right"].set_visible(True)
+    ax_bottom.spines["bottom"].set_visible(False)
+    ax_bottom.spines["left"].set_visible(True)
     ax_bottom.grid(True)
 
     # 余白エリアをオフ
     for idx in [(1, 0), (1, 2)]:
         ax = fig.add_subplot(gs[idx])
-        ax.axis('off')
+        ax.axis("off")
 
     # すべての軸を共有
     ax_main.set_xlim(x.min(), x.max())
@@ -136,18 +140,18 @@ def plot_with_marginals(
     ax_left.set_ylim(y.min(), y.max())
     ax_bottom.set_xlim(x.min(), x.max())
 
-
-    axes = {
-        'left': ax_left,
-        'main': ax_main,
-        'bottom': ax_bottom,
-        'cbar': ax_cbar
-    }
+    axes = {"left": ax_left, "main": ax_main, "bottom": ax_bottom, "cbar": ax_cbar}
     return fig, axes
 
 
-def plot_all(shot_num:int = None, diag:str='CTSfosc1', subshot:int=1, channel:int=1, 
-              t0:float = 0, f0:float = 0):
+def plot_all(
+    shot_num: int = None,
+    diag: str = "CTSfosc1",
+    subshot: int = 1,
+    channel: int = 1,
+    t0: float = 0,
+    f0: float = 0,
+):
     """
     Save the spectrogram plot for a given shot number, diagnostic, subshot, and channel.
     Parameters
@@ -165,29 +169,28 @@ def plot_all(shot_num:int = None, diag:str='CTSfosc1', subshot:int=1, channel:in
     f0 : float, optional
         The frequency offset to apply to the y-axis of the plot.
     """
-    #時間経過を表示
+    # 時間経過を表示
     tmp_time = time.time()
 
     print(f"Retrieving data for shot {shot_num}, diag {diag}, subshot {subshot}, channel {channel}...")
     data = retriever.retrieve_data(
         diag=diag,
         shotno=shot_num,
-        subshot=subshot, 
+        subshot=subshot,
         channel=channel,
         time_axis=False,
         dtype=np.int8,
     )
     print(f"Data retrieval completed in {time.time() - tmp_time:.2f} seconds.")
-    
+
     print(f"STFT processing data...")
 
     tmp_time = time.time()
 
-
-    fs = float(data.metadata['MIN_SAMPLE_RATE'] )
+    fs = float(data.metadata["MIN_SAMPLE_RATE"])
     f, t, Zxx = stft(
         data.val,
-        fs=fs, 
+        fs=fs,
         window="hann",
         nperseg=2**16,
         noverlap=None,
@@ -198,7 +201,7 @@ def plot_all(shot_num:int = None, diag:str='CTSfosc1', subshot:int=1, channel:in
     n_segments = 10000
     freq, spectrum = average_spectrum(data.val, n_segments, fs)
 
-    max_pixels = (1500,2000) 
+    max_pixels = (1500, 2000)
     ny, nx = Zxx.shape
     y_reduce = ny // max_pixels[0]
     x_reduce = nx // max_pixels[1]
@@ -208,30 +211,28 @@ def plot_all(shot_num:int = None, diag:str='CTSfosc1', subshot:int=1, channel:in
 
     n_sparse = 100000
     val_sparse = data.val[::n_sparse]  # 10kごとに間引き
-    time_sparse = np.arange(len(val_sparse)) / fs  * n_sparse# サンプリング周波数は12.5GHz
-    
-    Zxx_db =  20*(np.log10(abs(Zxx_r)+1e-12))
+    time_sparse = np.arange(len(val_sparse)) / fs * n_sparse  # サンプリング周波数は12.5GHz
+
+    Zxx_db = 20 * (np.log10(abs(Zxx_r) + 1e-12))
     vmax = np.percentile(Zxx_db, 99.9)
     vmin = np.percentile(Zxx_db, 30)
 
-        
-
     fig, axes = plot_with_marginals(
-        data2d= Zxx_db,  # dB スケール 
-        x=t_r + t0,       # [s] 表示
-        y=(f_r+f0) * 1e-9 ,  # [GHz] 表示
-        proj_x=20*(np.log10(abs(spectrum)+1e-12))[1:],  # dB スケール
+        data2d=Zxx_db,  # dB スケール
+        x=t_r + t0,  # [s] 表示
+        y=(f_r + f0) * 1e-9,  # [GHz] 表示
+        proj_x=20 * (np.log10(abs(spectrum) + 1e-12))[1:],  # dB スケール
         proj_y=val_sparse,
-        y_for_proj_x=(freq[1:]+f0) * 1e-9,  # [GHz] 表示
+        y_for_proj_x=(freq[1:] + f0) * 1e-9,  # [GHz] 表示
         x_for_proj_y=time_sparse + t0,  # [s] 表示\
-        vmax= vmax,  # dB スケール
-        vmin= vmin,  # dB スケール
-        cmap='inferno',
+        vmax=vmax,  # dB スケール
+        vmin=vmin,  # dB スケール
+        cmap="inferno",
         width_ratios=(1, 4, 0.1),
         height_ratios=(4, 1.5),
         figsize=(12, 8),
     )
-        
+
     axes["main"].set_xlabel("Time [s]", fontsize=14)
     axes["main"].set_ylabel("Frequency [GHz]", fontsize=14)
     axes["cbar"].set_ylabel("Magnitude [dB]")
@@ -245,22 +246,29 @@ def plot_all(shot_num:int = None, diag:str='CTSfosc1', subshot:int=1, channel:in
 
 from scipy.signal import resample
 
-def plot_all2(shot_num:int = None, diag:str='CTSfosc1', subshot:int=1, channel:int=1, 
-              t0:float = 0, f0:float = 0):
-    
+
+def plot_all2(
+    shot_num: int = None,
+    diag: str = "CTSfosc1",
+    subshot: int = 1,
+    channel: int = 1,
+    t0: float = 0,
+    f0: float = 0,
+):
+
     data = retriever.retrieve_data(
         diag=diag,
         shotno=shot_num,
-        subshot=subshot, 
+        subshot=subshot,
         channel=channel,
         time_axis=False,
         dtype=np.int8,  # ← int8ではなくfloatで
     )
     ...
-    fs = float(data.metadata['MIN_SAMPLE_RATE'])
+    fs = float(data.metadata["MIN_SAMPLE_RATE"])
     f, t, Zxx = stft(
         data.val,
-        fs=fs, 
+        fs=fs,
         window="hann",
         nperseg=2**16,
         noverlap=None,
@@ -299,13 +307,13 @@ def plot_all2(shot_num:int = None, diag:str='CTSfosc1', subshot:int=1, channel:i
         data2d=Zxx_db,
         x=t_r + t0,
         y=(f_r + f0) * 1e-9,
-        proj_x=20*np.log10(np.abs(spectrum)+1e-12)[1:],
+        proj_x=20 * np.log10(np.abs(spectrum) + 1e-12)[1:],
         proj_y=val_sparse,
         y_for_proj_x=(freq[1:] + f0) * 1e-9,
         x_for_proj_y=time_sparse + t0,
         vmax=vmax,
         vmin=vmin,
-        cmap='inferno',
+        cmap="inferno",
         width_ratios=(1, 4, 0.1),
         height_ratios=(4, 1.5),
         figsize=(12, 8),
@@ -320,19 +328,20 @@ def plot_all2(shot_num:int = None, diag:str='CTSfosc1', subshot:int=1, channel:i
 
     return fig, axes
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Save spectrogram plot for a given shot number.")
     parser.add_argument("--shot", type=int, required=True, help="Shot number")
-    parser.add_argument("--diag", type=str, default='CTSfosc1', help="Diagnostic name")
+    parser.add_argument("--diag", type=str, default="CTSfosc1", help="Diagnostic name")
     parser.add_argument("--subshot", type=int, default=1, help="Subshot number")
     parser.add_argument("--channel", type=int, default=1, help="Channel number")
     parser.add_argument("--t0", type=float, default=0, help="Time offset for x-axis")
     parser.add_argument("--f0", type=float, default=0, help="Frequency offset for y-axis")
     ## plt.show() を自動で呼び出すための引数
-    parser.add_argument("--show", action='store_true', help="Show the plot after saving")
+    parser.add_argument("--show", action="store_true", help="Show the plot after saving")
 
     args = parser.parse_args()
-    
+
     fig, axes = save_plot(shot_num=args.shot, diag=args.diag, subshot=args.subshot, channel=args.channel)
     fig.savefig(f"CTSfosc_{args.shot}.png", dpi=300)
     print(f"Plot saved as CTSfosc_{args.shot}.png")
