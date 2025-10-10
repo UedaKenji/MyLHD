@@ -21,7 +21,7 @@ from .anadata import KaisekiData
 from .labcom_retrieve import LHDRetriever, LHDData
 from .thomson_gp import ThomsonGP
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __author__ = "Kenji Ueda"
 __email__ = "kenji.ueda@nifs.ac.jp"
 

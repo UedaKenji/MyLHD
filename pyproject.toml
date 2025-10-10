@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mylhd"
-version = "0.1.0"
+version = "0.2.0"
 description = "LHD Data Collection and Analysis Package"
 readme = "CLAUDE.md"
 requires-python = ">=3.7"
@@ -43,6 +43,7 @@ dev = [
     "black>=21.0",
     "flake8>=3.9",
     "mypy>=0.910",
+    "pre-commit>=3.5",
 ]
 
 [project.scripts]
@@ -76,6 +77,21 @@ extend-exclude = '''
   | dist
 )/
 '''
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = [
+    "E203",  # whitespace before ':', conflicts with Black
+    "W503",  # line break before binary operator, Black default
+]
+exclude = [
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+    ".venv",
+    ".eggs",
+]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
