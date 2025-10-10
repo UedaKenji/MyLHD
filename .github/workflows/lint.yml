@@ -24,6 +24,10 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install ".[dev]"
 
+      - name: Run isort (check only)
+        run: |
+          python -m isort --check-only .
+
       - name: Run Black (check only)
         run: |
           python -m black --check .

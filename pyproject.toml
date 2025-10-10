@@ -43,6 +43,7 @@ dev = [
     "black>=21.0",
     "flake8>=3.9",
     "mypy>=0.910",
+    "isort>=5.12",
 ]
 
 [project.scripts]
@@ -90,6 +91,17 @@ exclude = [
     "dist",
     ".venv",
     ".eggs",
+]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+known_first_party = ["mylhd"]
+skip = [
+    ".git",
+    ".venv",
+    "build",
+    "dist",
 ]
 
 [tool.pytest.ini_options]
