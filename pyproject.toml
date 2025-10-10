@@ -43,7 +43,6 @@ dev = [
     "black>=21.0",
     "flake8>=3.9",
     "mypy>=0.910",
-    "pre-commit>=3.5",
 ]
 
 [project.scripts]
