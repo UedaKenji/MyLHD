@@ -136,6 +136,7 @@ class ThomsonGPCore:
         self.time_origin[0] = self.time_origin[1] - self.dt
 
         self.check_data(nt_limit=200)
+        if iprint: print('effective data shape is' , str((self.end_indx - self.start_indx, self.Te_origin.shape[1])))
 
         self.set_inp_data(start_idx=self.start_indx,end_indx=self.end_indx,iprint=iprint)
         self.set_kernel_type('Matern52',iprint=iprint)
@@ -153,7 +154,6 @@ class ThomsonGPCore:
 
         temp =  (np.median(ne_temp, axis=1)> ne_th ) + (np.median(Te_temp, axis=1)> Te_th )
 
-        
         if np.sum(temp)< 5:
             self.stop()
 
@@ -167,7 +167,7 @@ class ThomsonGPCore:
 
         self.start_indx = 0
         self.end_indx = len(temp)
-        alreadystart = False
+        """
         for i in range(0, len(temp)):
 
             if temp[i] == True and not alreadystart:
@@ -177,7 +177,25 @@ class ThomsonGPCore:
             if temp[i] == False and alreadystart:
                 self.end_indx = i
                 
-                break 
+                break
+        """
+        #self.plasma_exist のbool配列から一番大きな連続するTrueの区間をstart_indx, end_indxに設定
+        max_len = 0
+        current_len = 0
+        for i in range(len(temp)):
+            if temp[i] == True:
+                current_len += 1
+            else:
+                if current_len > max_len:
+                    max_len = current_len
+                    self.end_indx = i
+                    self.start_indx = i - current_len
+                current_len = 0
+        if current_len > max_len:
+            max_len = current_len
+            self.end_indx = len(temp)
+            self.start_indx = len(temp) - current_len
+
         
         if nt_limit is not None:
             if (self.end_indx - self.start_indx) > nt_limit:
@@ -219,7 +237,7 @@ class ThomsonGPCore:
             
         
         if iprint:
-            print('KernelType is set to',self.KernelType)
+            print('KernelType is set to be ' + self.KernelType)
         
     def set_kernel(self,ValName:str=None, KernelType:str = None, reff_scale:float = 0.1,time_scale:float = 0.1, time_cutoff:float = 1e-8, reff_cutoff:float = 1e-5):
 
@@ -285,7 +303,6 @@ class ThomsonGPCore:
         ne_inp   = self.ne_origin.copy()[  start_idx:end_indx]
         sigma_Te = self.dTe_origin.copy()[ start_idx:end_indx]
         sigma_ne = self.dne_origin.copy()[ start_idx:end_indx]
-
         Te_median = medfilt(Te_inp, kernel_size=5)
         ne_median = medfilt(ne_inp, kernel_size=5)
 

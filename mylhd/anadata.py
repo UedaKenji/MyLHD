@@ -77,15 +77,33 @@ class KaisekiData:
         """
         url=BASEURL % (diag, shotno, subno)
         http=urllib3.PoolManager()
-        data = None
         try:
             resp = http.request('GET', url)
-            fileio=io.StringIO(resp.data.decode('utf-8'))
-            data = cls(fileio=fileio)
-        except:
-            print(traceback.format_exc())
-            pass
-        return data
+        except urllib3.exceptions.HTTPError as exc:
+            raise RuntimeError(f"Failed to connect to open data server: {url}") from exc
+
+        if resp.status >= 400:
+            raise FileNotFoundError(
+                f"No open data available for diag={diag}, shotno={shotno}, subno={subno} "
+                f"(status={resp.status})"
+            )
+
+        payload = resp.data.decode('utf-8')
+        if not payload.strip():
+            raise FileNotFoundError(
+                f"No open data available for diag={diag}, shotno={shotno}, subno={subno}"
+            )
+
+        if "[data]" not in payload.lower():
+            raise FileNotFoundError(
+                f"Open data response does not contain data section for diag={diag}, "
+                f"shotno={shotno}, subno={subno}"
+            )
+
+        try:
+            return cls(fileio=io.StringIO(payload))
+        except Exception as exc:
+            raise ValueError("Failed to parse open data response") from exc
     
     @classmethod
     def retrieve(cls, diag:str, shotno:int, subno=1 ) -> 'KaisekiData':
@@ -214,7 +232,6 @@ class KaisekiData:
             valunits = h.get('valunit')
             if not subno:
                 subno = 1
-
             self.name = name.strip("' ")
             self.date = date.strip("' ")
             self.shotno = int(shotno)

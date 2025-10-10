@@ -547,8 +547,8 @@ class ThomsonGPVisualizer:
 
 
         if add_noise:
-            K0 = KSE(self.time_inp[idx_valid],self.time_inp[idx_valid],self.time_scale_Te*0.3)
-            K1 = KSE(self.time_inp,self.time_inp[idx_valid],self.time_scale_Te*0.3)
+            K0 = self.Kernel(self.time_inp[idx_valid],self.time_inp[idx_valid],self.time_scale_Te*0.3)
+            K1 = self.Kernel(self.time_inp,self.time_inp[idx_valid],self.time_scale_Te*0.3)
             noise_fit = K1@ np.linalg.solve(K0+sig_scale**2*np.eye(K0.shape[0]),noise[idx_valid])
 
             ax.fill_between(self.time_inp,np.exp(f)-noise_fit,np.exp(f)+noise_fit,alpha=0.1,label='noise range',zorder=0,color='gray')
