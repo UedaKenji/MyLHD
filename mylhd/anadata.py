@@ -6,11 +6,13 @@ import os
 import io
 import random
 import string
+import time
 import urllib3
 import traceback
 import re
 import numpy as np
 import pandas as pd
+from typing import Callable, Optional
 
 BASEURL="https://exp.lhd.nifs.ac.jp/opendata/LHD/webapi.fcgi?cmd=getfile&diag=%s&shotno=%d&subno=%d"
 
@@ -472,5 +474,67 @@ class KaisekiData:
         print(self.comment)
 
 
-    
+
+def wait_for_opendata(
+    diag: str,
+    shotno: int,
+    subno: int = 1,
+    retry_delay: int = 60,
+    retrieve_func: Optional[Callable[..., object]] = None,
+) -> object:
+    """
+    Poll ``KaisekiData.retrieve_opendata`` (or ``retrieve_func``) until data is ready.
+
+    Parameters
+    ----------
+    diag : str
+        Diagnostic name supplied to the open-data server.
+    shotno : int
+        Target shot number.
+    subno : int, default 1
+        Optional sub-shot number.
+    retry_delay : int, default 60
+        Seconds to wait between successive retry attempts. Must be positive.
+    retrieve_func : callable, optional
+        Custom retrieval function accepting the same keyword arguments as
+        ``KaisekiData.retrieve_opendata``. When ``None`` the package implementation
+        is used.
+
+    Returns
+    -------
+    object
+        Whatever object ``retrieve_func`` returns once the data becomes available.
+
+    Raises
+    ------
+    ValueError
+        If ``retry_delay`` is not positive.
+    Exception
+        Any non ``FileNotFoundError`` exception raised by ``retrieve_func`` is
+        propagated without retry.
+    """
+    if retry_delay <= 0:
+        raise ValueError("retry_delay must be a positive number of seconds.")
+
+    if retrieve_func is None:
+        # Avoid importing mylhd unless needed to keep this module lightweight.
+        from mylhd import KaisekiData  # type: ignore
+
+        retrieve_func = KaisekiData.retrieve_opendata  # type: ignore[attr-defined]
+
+    elapsed = 0
+    while True:
+        try:
+            return retrieve_func(diag=diag, shotno=shotno, subno=subno)
+        except FileNotFoundError:
+            elapsed += retry_delay
+            message = (
+                f"No data for diag={diag}, shotno={shotno}, subno={subno}. "
+                f"Waiting {elapsed:>6d}s..."
+            )
+            print(message, end="\r", flush=True)
+            time.sleep(retry_delay)
+        except Exception:
+            # Bubble up unexpected errors so callers can handle them explicitly.
+            raise
 
