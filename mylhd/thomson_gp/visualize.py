@@ -11,6 +11,7 @@ import numpy as np
 from matplotlib.colors import ListedColormap
 
 from .plotting import axs_cbar, make_alpha_colormap, plotGP, plotLogGP
+from ..plot_utils import cmocean_balance
 
 if TYPE_CHECKING:
     from .core import ThomsonGPCore
@@ -263,7 +264,7 @@ class ThomsonGPVisualizer:
             data,
             vmax=np.exp(f).max() * 1.1,
             vmin=0,
-            cmap="jet",
+            cmap="turbo",
         )
         axs_cbar(ax[0], im)
         ax[0].contour(
@@ -280,21 +281,21 @@ class ThomsonGPVisualizer:
 
         mask = f < np.log(np.exp(np.percentile(f, 95)) * 0.05)  # + self.idx_outlier
 
-        im = ax[1].pcolormesh(X, times, np.exp(f), vmax=np.exp(f).max() * 1.1, vmin=0, cmap="jet")
+        im = ax[1].pcolormesh(X, times, np.exp(f), vmax=np.exp(f).max() * 1.1, vmin=0, cmap="turbo")
         axs_cbar(ax[1], im)
 
         if log:
-            im = ax[2].pcolormesh(X, times, f_dr, vmax=10, vmin=-10, cmap="seismic")
+            im = ax[2].pcolormesh(X, times, f_dr, vmax=5, vmin=-5, cmap=cmocean_balance)
         else:
-            im = ax[2].pcolormesh(X, times, np.exp(f) * f_dr, vmax=15, vmin=-15, cmap="seismic")
+            im = ax[2].pcolormesh(X, times, np.exp(f) * f_dr, vmax=10, vmin=-10, cmap=cmocean_balance)
         axs_cbar(ax[2], im)
 
         ax[2].pcolormesh(X, times, mask, cmap=cmap)
 
         if log:
-            im = ax[3].pcolormesh(X, times, f_dt, vmax=10, vmin=-10, cmap="seismic")
+            im = ax[3].pcolormesh(X, times, f_dt, vmax=5, vmin=-5, cmap=cmocean_balance)
         else:
-            im = ax[3].pcolormesh(X, times, np.exp(f) * f_dt, vmax=15, vmin=-15, cmap="seismic")
+            im = ax[3].pcolormesh(X, times, np.exp(f) * f_dt, vmax=10, vmin=-10, cmap=cmocean_balance)
         axs_cbar(ax[3], im)
 
         ax[3].pcolormesh(X, times, mask, cmap=cmap)

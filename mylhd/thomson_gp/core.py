@@ -6,7 +6,8 @@ import json
 import socket
 import time
 import warnings
-from typing import Callable
+from dataclasses import dataclass
+from typing import Any, Callable, Optional, Sequence, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -424,9 +425,8 @@ class ThomsonGPCore:
         self,
         time_start=None,
         time_end=None,
-        include_end=True,
-        time_separate: list = [],
         time_independence: bool = False,
+        plot: bool = True,
     ):
         """
         Set the time range for the fitting.
@@ -462,17 +462,9 @@ class ThomsonGPCore:
 
         self.set_inp_data(start_idx=self.itime_start, end_indx=self.itime_end + 1)
 
-        self.i_time_sep = []
-        for time in time_separate:
-            # 謖・ｮ壹＠縺溷・蜑ｲ譎ょ綾縺檎ｯ・峇螟悶・蝣ｴ蜷医・繧ｨ繝ｩ繝ｼ
-            if (time < time_start) or (time > time_end):
-                # print('separate time = '+str(time) +'s must be between time_start and time_end')
-                raise ValueError("separate time = " + str(time) + "s must be between time_start and time_end")
-
-            itime = np.argmin(abs(self.time_inp - time))
-            print(itime)
-            self.i_time_sep.append(itime)
-
+        if not plot:
+            return
+        
         fig, axs = plt.subplots(1, 2, figsize=(8, 10))
         vmax = np.percentile(self.Te_inp, 90) * 1.5
         axs[0].pcolormesh(self.realR_origin, self.time_origin, self.Te_origin, vmax=vmax, vmin=0)
