@@ -16,7 +16,7 @@ from . import anadata, cts_utls, labcom_retrieve, thomson_gp
 # Expose key classes at package level
 from .anadata import KaisekiData
 from .labcom_retrieve import LHDData, LHDRetriever
-from .thomson_gp import ThomsonGP
+from .thomson_gp import ThomsonGP, ThomsonGPMultiPhase
 
 __version__ = "0.2.0"
 __author__ = "Kenji Ueda"
@@ -31,4 +31,5 @@ __all__ = [
     "LHDRetriever",
     "LHDData",
     "ThomsonGP",
+    "ThomsonGPMultiPhase",
 ]

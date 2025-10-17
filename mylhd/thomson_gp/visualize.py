@@ -306,9 +306,9 @@ class ThomsonGPVisualizer:
             for i in range(1, 4):
                 if rho_contour:
                     ax[i].contour(
-                        X[:, self.idx_reff_outlier],
+                        X,
                         times,
-                        self.rho_inp[:, self.idx_reff_outlier],
+                        self.rho_inp,
                         levels=np.linspace(-1.0, 1.0, 11),
                         colors="black",
                         linewidths=0.5,
@@ -332,6 +332,177 @@ class ThomsonGPVisualizer:
             plt.tight_layout()
             plt.savefig(save_name)
             plt.close()
+
+    def plot_im_ax(
+        self: "ThomsonGPCore",
+        ValName: str = "Te",
+        funckind: str = "f",
+        x_axis: str = "rho",
+        ax: plt.Axes = None,
+        rho_contour=True,
+        log: bool = False,
+        vmax=None,
+        vmin=None,
+        cmap=None,
+        colorbar=False,
+    ) -> plt.Axes:
+        
+        
+        if ax is None:
+            fig, ax = plt.subplots(1, 1, figsize=(4, 8))
+
+        res = self.get_func_properties(ValName, funckind, log)
+
+        if cmap in  ['cmocean_balance' ,'balance', 'cmo_balance', 'cmbalance', 'cm_balance']:
+            cmap = cmocean_balance
+
+        f = res["f"]    
+        ax_title = res["title"]
+
+        xres = self.get_x_axis_properties(x_axis, ax)
+
+        X = xres["X"]
+        x_title = xres["x_title"]
+        rho_contour = True if rho_contour and xres["rho_contour"] else False 
+        ax.set_xlabel(x_title)
+
+        im = ax.pcolormesh(X, self.time_inp, f, vmax=vmax, vmin=vmin, cmap=cmap)
+        ax.set_title(ax_title)
+        if colorbar:
+            axs_cbar(ax, im)
+        if rho_contour:
+            ax.contour(
+                X,
+                self.time_inp,
+                self.rho_inp,
+                levels=np.linspace(-1.0, 1.0, 11),
+                colors="black",
+                linewidths=0.5,
+            )
+        
+        return ax
+    
+    def get_func_properties(self: "ThomsonGPCore",
+            ValName: str,
+            FuncKind: str,
+            log: bool = False) -> dict:
+        """
+        Get function properties for plotting.
+        Parameters:
+            ValName: The name of the value to plot (e.g., "Te" or "ne").
+            FuncKind: The kind of function to plot (e.g., "f", "dfdr", or "dfdt").
+            log: Whether to use a logarithmic scale.
+        Returns:
+            f: The function to plot.
+            title: The title for the plot.
+        """
+        ValName = self._valname(ValName)
+        kind_f = ['f', 'func', 'function', None]
+        kind_dfdr = ['dfdr',  'dr', 'df/dr']
+        kind_dfdt = ['dfdt',  'dt', 'df/dt']
+        if ValName == "Te":
+            if FuncKind in kind_f:
+                if log:
+                    f = self.logTe_fit
+                    title = r"$\log T_e$_fit"+ r" $[ ]$"
+                else:
+                    f = np.exp(self.logTe_fit)
+                    title = r"$T_e$_fit" + r" $\mathrm{[keV]}$"
+            elif FuncKind in kind_dfdr:
+                if log:
+                    f = self.dlogTe_dr
+                    title = r"$d\log(T_e)/d\rho_v$" + r" $[ ]$"
+                else:
+                    f = self.dlogTe_dr * np.exp(self.logTe_fit)
+                    title = r"$dT_e/d\rho_v$" + r" $[\mathrm{keV}]$"
+            elif FuncKind in kind_dfdt:
+                if log:
+                    f = self.dlogTe_dt
+                    title = r"$d\log(T_e)/dt$" + r" $[\mathrm{1/s}]$"
+                else:
+                    f = self.dlogTe_dt * np.exp(self.logTe_fit)
+                    title = r"$dT_e/dt$" + r" $[\mathrm{keV/s}]$"
+            else:
+                raise NameError('FuncKind must be "f" or "dfdr" or "dfdt"')
+
+        elif ValName == "ne":
+            if FuncKind in kind_f:
+                if log:
+                    f =  self.logNe_fit
+                    title = r"$\log n_e$_fit" + r" $[ ]$"
+                else:
+                    f =  np.exp(self.logNe_fit)
+                    title = r"$n_e$_fit $\mathrm{[10^{19}m^{-3}]}$"
+            elif FuncKind in kind_dfdr:
+                if log:
+                    f = self.dlogNe_dr
+                    title = r"$d\log(n_e)/d\rho_v$" + r" $[ ]$"
+                else:
+                    f = self.dlogNe_dr * np.exp(self.logNe_fit)
+                    title = r"$d n_e/d\rho_v$" + r" $[\mathrm{10^{19}m^{-3}}]$"
+            elif FuncKind in kind_dfdt:
+                if log:
+                    f = self.dlogNe_dt
+                    title = r"$d\log(n_e)/dt$" + r" $[\mathrm{1/s}]$"
+                else:
+                    f = self.dlogNe_dt * np.exp(self.logNe_fit)
+                    title = r"$d n_e/dt$" + r" $[\mathrm{10^{19}m^{-3}/s}]$"
+            else:
+                raise NameError('FuncKind must be "f" or "dfdr" or "dfdt"')
+        else:
+            raise NameError('ValName must be "ne" or "Te"')
+        return {
+            "f": f,
+            "title": title
+        }
+    
+    def get_x_axis_properties(self: "ThomsonGPCore",
+            x_axis: str,
+            ax:plt.Axes = None) -> dict:
+        """
+        Get x-axis properties for plotting.
+        Parameters:
+            x_axis: The name of the x-axis variable (e.g., "rho", "rho_vac", "R").
+            ax: The matplotlib axis to use for setting limits (optional).
+        Returns:
+            X: The x-axis data.
+            x_title: The title for the x-axis.
+            rho_contour: Whether to plot rho contours.
+        """
+        if ax is not None:
+            xlim_is_default = ax.get_xlim() == (0, 1.0)
+            ylim_is_default = ax.get_ylim() == (0, 1.0)
+        
+        if x_axis in ["rho_vac", "reff/a99_vac"]:
+            X = self.rho_vac
+            x_title = r"${r_\mathrm{eff}/a_{99}}$ (vacuum)"
+            rho_contour = True
+            if ax is not None and xlim_is_default:
+                ax.set_xlim(-1.01, 1.01)
+            if ax is not None and ylim_is_default:
+                ax.set_ylim(-1.01, 1.01)
+
+        elif x_axis in ["rho", "reff/a99"]:
+            rho_contour = False
+            X = self.rho_inp
+            x_title = r"${r_\mathrm{eff}/a_{99}}$"
+            if ax is not None and xlim_is_default:
+                ax.set_xlim(-1.15, 1.15)
+            if ax is not None and ylim_is_default:
+                ax.set_ylim(-1.15, 1.15)
+        elif x_axis in ["R", "real", "realR"]:
+            X = self.realR_origin
+            x_title = r"${R} $[m]"
+            rho_contour = True
+            if ax is not None and ylim_is_default:
+                ax.set_ylim(self.realR_origin.min(), self.realR_origin.max())
+        else:
+            raise ValueError('x_axis must be "rho" or "rho_vac" or "R"')
+        return {
+            "X": X,
+            "x_title": x_title,
+            "rho_contour": rho_contour
+        }
 
     def plotProfile(
         self: "ThomsonGPCore",
@@ -559,7 +730,7 @@ class ThomsonGPVisualizer:
         if DimName == "reff":
             Kpos_i = self.localPosteriorDr(np.array([timei]), reff, ValName=ValName)
         elif DimName == "time":
-            Kpos_i = self.localPosteriorDt(np.array([timei]), reff, parameter=ValName)
+            Kpos_i = self.localPosteriorDt(np.array([timei]), reff, ValName=ValName)
 
         sigma = np.sqrt(np.diag(Kpos_i))
 
@@ -588,7 +759,7 @@ class ThomsonGPVisualizer:
         ax.axhline(0, linestyle="--", color="gray")
         ax.axvline(0, linestyle="--", color="gray")
 
-    def plotEvolution(
+    def plotTrace(
         self: "ThomsonGPCore",
         ValName: str = None,
         reff: float = None,
@@ -598,7 +769,9 @@ class ThomsonGPVisualizer:
         add_noise: bool = False,
         interpolation: bool = False,
         sampling: int = 0,
+        is_label: bool = True,  
     ):
+        ValName = self._valname(ValName)
 
         if ValName == "Te":
             y = self.Te_inp
@@ -642,9 +815,10 @@ class ThomsonGPVisualizer:
             yerr=dy[idx_valid],
             capsize=3,
             fmt="D",
-            label="valid data",
+            label="valid data" if is_label else None,
             zorder=1,
             markersize=4,
+            color="C0",
         )
 
         # eliminated data
@@ -655,14 +829,17 @@ class ThomsonGPVisualizer:
             capsize=3,
             fmt="D",
             alpha=0.5,
-            label="eliminated data",
+            label="eliminated data" if is_label else None,
             zorder=1,
             markersize=4,
+            color="C1",
         )
 
         f = f[:, i]
 
-        ax.plot(self.time_inp, np.exp(f), label="logGP-fit", zorder=2, color=color)
+        ax.plot(self.time_inp, np.exp(f), 
+                label="logGP-fit" if is_label else None
+                , zorder=2, color=color)
 
         noise = dy * sig_scale
 
@@ -719,6 +896,7 @@ class ThomsonGPVisualizer:
             color=color,
             alpha_max=0.5,
             n_sample=sampling,
+            is_label=is_label,
         )
 
         ax.set_xlabel("time [s]")
@@ -738,7 +916,8 @@ class ThomsonGPVisualizer:
         color: str = "red",
         sampling: int = 0,
     ):
-
+        
+        ValName = self._valname(ValName)
         if ValName == "Te":
             if DimName == "reff":
                 f = self.dlogTe_dr
@@ -777,7 +956,7 @@ class ThomsonGPVisualizer:
         if DimName == "reff":
             Kpos_i = self.localPosteriorDr(self.time_inp, reffi, ValName=ValName)
         elif DimName == "time":
-            Kpos_i = self.localPosteriorDt(self.time_inp, reffi, parameter=ValName)
+            Kpos_i = self.localPosteriorDt(self.time_inp, reffi, ValName=ValName)
 
         sigma = np.sqrt(np.diag(Kpos_i))
 

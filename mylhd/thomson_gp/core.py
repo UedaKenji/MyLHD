@@ -36,7 +36,11 @@ from .utils import Logger, callback_counter, numerical_differentiation_matrix
 class ThomsonGPCore:
     """Core Gaussian-process reconstruction logic for Thomson scattering data."""
 
-    # json繝輔ぃ繧､繝ｫ縺九ｉ繝代Λ繝｡繝ｼ繧ｿ繧定ｪｭ縺ｿ霎ｼ繧繧ｯ繝ｩ繧ｹ繝｡繧ｽ繝・ラ
+    TE_NAMES = ("te", "temperature", "electron temperature","temperature of electron" )
+    NE_NAMES = ("ne", "density", "electron density","density of electron" )
+    Te_unit: str = "keV"
+    Ne_unit: str = "10^19 m^-3"
+
     @classmethod
     def load_from_json(cls, filename: str):
         import json
@@ -47,7 +51,6 @@ class ThomsonGPCore:
         cls_obj = cls(shotNo=params["shotNo"])
         cls_obj.optimized = params["optimized"]
 
-        # 繧ｯ繝ｩ繧ｹ繧ｪ繝悶ず繧ｧ繧ｯ繝医・螻樊ｧ縺ｫ param 縺ｮ蛟､繧剃ｻ｣蜈･
         for key, value in params.items():
             setattr(cls_obj, key, value)
 
@@ -70,7 +73,6 @@ class ThomsonGPCore:
     def __init__(
         self,
         shotNo: int = 190600,
-        filename: str = None,
         from_opendata: bool = True,
         iprint: bool = True,
     ):
@@ -94,15 +96,14 @@ class ThomsonGPCore:
             else:
                 # thomsom    = KaisekiData.retrieve_opendata(diag='thomson',shotno=shotNo)
                 self.data = KaisekiData.retrieve_opendata(diag="tsmap_calib", shotno=shotNo)
-        except:
+        except Exception as e:
+            print("Error occurred while loading data:", e)
             self.stop()
 
         self.data = self.data
 
-        # Cycle 縺ｮ諠・ｱ繧貞叙蠕・
         for i in self.data.comment.split("\n"):
             if "Cycle" in i:
-                # 'Cycle = 25.0000' 縺ｨ縺・≧譁・ｭ怜・縺九ｉ 25 繧呈歓蜃ｺ
                 temp = i.split("=")[1]
                 temp = temp.split("\r")[0]
                 self.cycle = int(float(temp))
@@ -113,16 +114,9 @@ class ThomsonGPCore:
         # date = date[2]+date[0]+date[1]
 
         # self.date = date
-
+        self.filename = None
         self.time_independence: bool = False
         self.optimized: bool = False
-        self.Te_namelist = [
-            "te",
-            "temperature",
-            "electron temperature",
-            "temperature of electron",
-        ]
-        self.ne_namelist = ["ne", "density", "electron density", "density of electron"]
 
         # self.data2 = tsmap_calib
         # ShowAnadataInfo(thomsom)
@@ -140,29 +134,25 @@ class ThomsonGPCore:
         self.ne_origin = self.data.get_val_data("ne_calFIR")
         self.dne_origin = abs(self.data.get_val_data("dne_calFIR"))
 
-        end_indx = self.check_data()
 
         self.origin_shape = self.Te_origin.shape
 
         if iprint:
             print("original data shape is", self.Te_origin.shape)
 
-        self.Te_unit: str = "keV"
-        self.Ne_unit: str = "10^19 m^-3"
-
         self.time_origin = self.data.get_dim_data("Time")
         self.dt = np.diff(self.time_origin[1:]).mean()
-        # tsmap_calib 縺ｧ縺ｯ Time[0] 縺悟ｸｸ縺ｫ 0 縺ｫ縺ｪ繧九◆繧√・｣邯壽ｧ繧剃ｿ昴▽繧医≧ Time[0] 繧・Time[1] - dt 縺ｫ鄂ｮ縺肴鋤縺医ｋ
         self.time_origin[0] = self.time_origin[1] - self.dt
 
         self.check_data(nt_limit=200)
+        self.start_indx_base = 0
         if iprint:
             print(
                 "effective data shape is",
-                str((self.end_indx - self.start_indx, self.Te_origin.shape[1])),
+                str((self.end_indx_base - self.start_indx_base, self.Te_origin.shape[1])),
             )
 
-        self.set_inp_data(start_idx=self.start_indx, end_indx=self.end_indx, iprint=iprint)
+        self.set_inp_data(start_idx=self.start_indx_base, end_indx=self.end_indx_base, iprint=iprint)
         self.set_kernel_type("Matern52", iprint=iprint)
 
     def stop(
@@ -170,7 +160,7 @@ class ThomsonGPCore:
     ):
         raise Exception("shot " + str(self.shotNo) + " does not have data")
 
-    def check_data(self, ne_th: float = 0.2, Te_th: float = 0.4, nt_limit=None):
+    def check_data(self, ne_th: float = 0.1, Te_th: float = 0.2, nt_limit=None):
 
         ne_temp = self.ne_origin.copy()
         ne_temp[self.dne_origin > 2] = 0
@@ -188,10 +178,8 @@ class ThomsonGPCore:
         # if temp[5]:
         #    temp[:5] = True
 
-        self.plasma_exist = temp
-
-        self.start_indx = 0
-        self.end_indx = len(temp)
+        self.start_indx_base = 0
+        self.end_indx_base = len(temp)
         """
         for i in range(0, len(temp)):
 
@@ -213,17 +201,17 @@ class ThomsonGPCore:
             else:
                 if current_len > max_len:
                     max_len = current_len
-                    self.end_indx = i
-                    self.start_indx = i - current_len
+                    self.end_indx_base = i
+                    self.start_indx_base = i - current_len
                 current_len = 0
         if current_len > max_len:
             max_len = current_len
-            self.end_indx = len(temp)
-            self.start_indx = len(temp) - current_len
+            self.end_indx_base = len(temp)
+            self.start_indx_base = len(temp) - current_len
 
         if nt_limit is not None:
-            if (self.end_indx - self.start_indx) > nt_limit:
-                self.end_indx = self.start_indx + nt_limit
+            if (self.end_indx_base - self.start_indx_base) > nt_limit:
+                self.end_indx_base = self.start_indx_base + nt_limit
 
     def set_kernel_type(self, KernelType: str = "KSE", iprint=True):
         self.KernelType = None
@@ -292,20 +280,20 @@ class ThomsonGPCore:
             iprint=False,
         )
 
-        if ValName in self.Te_namelist:
+        if ValName in self.TE_NAMES:
             self.time_scale_Te = time_scale
             self.rho_scale_Te = reff_scale
             self.Ktt_low_Te = Ktt_low
             self.Krr_low_Te = Krr_low
 
-        elif ValName in self.ne_namelist:
+        elif ValName in self.NE_NAMES:
             self.time_scale_Ne = time_scale
             self.rho_scale_Ne = reff_scale
             self.Ktt_low_Ne = Ktt_low
             self.Krr_low_Ne = Krr_low
 
         else:
-            raise NameError("ValName must be " + str(self.Te_namelist) + " or " + str(self.ne_namelist))
+            raise NameError("ValName must be " + str(self.TE_NAMES) + " or " + str(self.NE_NAMES))
 
     def _valname(self, ValName: str) -> str:
         """
@@ -320,12 +308,12 @@ class ThomsonGPCore:
         """
 
         ValName = ValName.lower()
-        if ValName in self.Te_namelist:
+        if ValName in self.TE_NAMES:
             ValName = "Te"
-        elif ValName in self.ne_namelist:
+        elif ValName in self.NE_NAMES:
             ValName = "ne"
         else:
-            raise NameError("ValName must be " + str(self.Te_namelist) + " or " + str(self.ne_namelist))
+            raise NameError("ValName must be " + str(self.TE_NAMES) + " or " + str(self.NE_NAMES))
 
         return ValName
 
@@ -447,13 +435,13 @@ class ThomsonGPCore:
 
         if time_start is None:
             # self.itime_start = 0
-            self.itime_start = self.start_indx
+            self.itime_start = self.start_indx_base
         else:
             self.itime_start = np.argmin(abs(self.time_origin - time_start))
 
         if time_end is None:
             # self.itime_end = len(self.time_origin)-1
-            self.itime_end = self.end_indx - 1
+            self.itime_end = self.end_indx_base - 1
         else:
             self.itime_end = np.argmin(abs(self.time_origin - time_end))
 
@@ -523,10 +511,8 @@ class ThomsonGPCore:
         ax.axhline(y, color=color, lw=1)
         if istext:
 
-            # 蟆乗焚轤ｹ莉･荳九・譯∵焚繧呈純縺医※陦ｨ遉ｺ
             text = "start: " + str(self.time_origin[self.itime_start])[:6] + "s" + ", i=" + str(self.itime_start)
             ax.text(x, y + 0.05, text, color=color, fontsize=fontsize)
-        # 荳雁髄縺咲泙蜊ｰ繧定ｿｽ蜉
         ax.annotate(
             "",
             xy=(x - 0.1, y),
@@ -546,7 +532,8 @@ class ThomsonGPCore:
             xytext=(x - 0.1, y - 0.2),
             arrowprops=dict(arrowstyle="<-", color=color, lw=1.5),
         )
-
+        return
+        
         for i, itime in enumerate(self.i_time_sep):
             y = self.time_inp[itime] - 0.5 * self.dt
             ax.axhline(y, color=color, lw=1)
@@ -559,6 +546,7 @@ class ThomsonGPCore:
                 xytext=(x - 0.1, y + 0.2),
                 arrowprops=dict(arrowstyle="<-", color=color, lw=1.5),
             )
+        
 
     def mainTe(
         self,
@@ -715,7 +703,6 @@ class ThomsonGPCore:
 
         Krr = self.Kernel(rho, rho, rho_scale)
         Krr_dr = self.Kernel_dx(rho, rho, rho_scale)
-
         Krr_low = LowRankPDM(Krr, cutoff=reff_cutoff)
         sigma_inv = 1 / (sigma * sigma_scale)
         sigma2_inv = sigma_inv**2

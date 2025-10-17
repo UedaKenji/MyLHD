@@ -13,152 +13,18 @@ from .. import anadata
 from ..anadata import KaisekiData
 from ..labcom_retrieve import LHDData, LHDRetriever
 
+from . import filter_list
+
 plt.rcParams["font.size"] = 12  # 全体のフォントサイズが変更されます。
 plt.rcParams["xtick.direction"] = "in"  # 目盛り線の向き、内側"in"か外側"out"かその両方"inout"か
 plt.rcParams["ytick.direction"] = "in"
 
-mwscat_freq_wrong = [
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    500,
-    900,
-    1300,
-    1500,
-    1700,
-    1800,
-    1900,
-    2000,
-    2100,
-    2200,
-    2300,
-    2400,
-    2500,
-    2600,
-    2700,
-    2800,
-    2825,
-    2875,
-    2925,
-    2975,
-    3025,
-    3075,
-    3125,
-    3175,
-]
-mwscat2_freq_wrong = [
-    3200,
-    3300,
-    3400,
-    3500,
-    3600,
-    3700,
-    3800,
-    3900,
-    4000,
-    4100,
-    4200,
-    4300,
-    4500,
-    4700,
-    5100,
-    5500,
-    None,
-    None,
-    1000,
-    1300,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-]
 
+mwscat_effective_channels = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 
+                             25, 26, 27, 28, 29, 30, 31, 32]
 
-mwscat_freq = [
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    500,
-    900,
-    1300,
-    1500,
-    1700,
-    1800,
-    1900,
-    2000,
-    2100,
-    2200,
-    2300,
-    2400,
-    2500,
-    2600,
-    2700,
-    2800,
-    3200,
-    3300,
-    3400,
-    3500,
-    3600,
-    3700,
-    3800,
-    3900,
-]
-mwscat2_freq = [
-    4000,
-    4100,
-    4200,
-    4300,
-    4500,
-    4700,
-    5100,
-    5500,
-    2825,
-    2875,
-    2925,
-    2975,
-    3025,
-    3075,
-    3125,
-    3175,
-    None,
-    None,
-    1000,
-    1300,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-]
+mwscat2_effective_channels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
 
-freq_list = {}
-freq_list["mwscat"] = mwscat_freq
-freq_list["mwscat2"] = mwscat2_freq
 
 
 def get_latest_shot_num(shotno_start):
@@ -280,6 +146,9 @@ def plot_mwscat_all(
         axs = axs
         fig = axs[0, 0].get_figure()
 
+    freq_list = filter_list.get_freqlist(digi, shotno)
+    print()
+
     for i in range(32):
         icol, irow = int(i / 4), int(i % 4)
         ax: plt.Axes = axs[icol, irow]
@@ -289,6 +158,9 @@ def plot_mwscat_all(
         data = retriever.retrieve_data(diag=digi, shotno=shotno, subshot=1, channel=ch_i, time_axis=True)
         val: np.ndarray = data.get_val()
         timedata0: np.ndarray = data.time
+
+        offset = np.mean(val[timedata0 < 2.0])
+
 
         if start_time is not None:
             start_index = np.argmin(np.abs(timedata0 - start_time))
@@ -309,15 +181,28 @@ def plot_mwscat_all(
         n = int(timedata0[start_index:end_index].size / 2000)
 
         sl = slice(start_index, end_index, n)
-        ax.plot(timedata0[sl], sig_voltdata[sl])
-        ax.set_title("ch" + str(i + 1) + ": " + str(freq_list[digi][i])[:4] + " MHz")
+        sig_voltdata2 = sig_voltdata[sl] - offset
+        ax.plot(timedata0[sl], sig_voltdata2)
+        ax.set_title("ch" + str(i + 1) + ": " + str(freq_list[i])[:4] + " MHz")
         ax.set_xlim(xmin, xmax)
+
+        ymin, ymax = np.percentile(sig_voltdata2, [0.5, 99.5])
+
+        if ymax - ymin < 0.05:
+            ymin -= 0.03
+            ymax += 0.03
+        ax.set_ylim(ymin, ymax)
+
+        #グラフの右上のoffsetの値をテキストとして表示
+        ax.text(0.95, 0.9, f"offset: {offset:.4f} V", transform=ax.transAxes, fontsize=12, ha='right', va='top')
 
         if icol == 7:
             ax.set_xlabel("time [sec]")
         if irow == 0:
             ax.set_ylabel("Signal [V]")
-
+        ax.axhline(0, color="black", linestyle="--", linewidth=1, alpha=0.8)
+        # y軸を反転
+        ax.invert_yaxis()
         # 縦のグリッド線を追加
         ax.grid(axis="x", linestyle="--", alpha=1, linewidth=1)
 

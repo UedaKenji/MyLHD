@@ -1,5 +1,5 @@
 """Thomson scattering Gaussian-process analysis tools."""
 
-from .model import ThomsonGP
+from .model import ThomsonGP, ThomsonGPMultiPhase
 
-__all__ = ["ThomsonGP"]
+__all__ = ["ThomsonGP", "ThomsonGPMultiPhase"]

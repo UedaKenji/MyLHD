@@ -39,6 +39,7 @@ def plotGP(
     color: str = "darkblue",
     alpha_max: float = 1.0,
     n_sample: int = 0,
+    is_label: bool = True,
     **_: dict,
 ) -> None:
     """Visualize a Gaussian process posterior as a heatmap with optional samples."""
@@ -87,7 +88,7 @@ def plotGP(
                 color=color,
                 alpha=0.5,
                 lw=0.3,
-                label="sample path" if idx == 0 else None,
+                label="sample path" if idx == 0 and is_label else None,
             )
 
     ax.plot(
@@ -96,7 +97,7 @@ def plotGP(
         color=color,
         linestyle="dashed",
         lw=1.0,
-        label=r"$\pm 1\sigma$",
+        label=r"$\pm 1\sigma$" if is_label else None,
     )
     ax.plot(x_inp, f_inp - sigma, color=color, linestyle="dashed", lw=1.0)
 
@@ -111,6 +112,7 @@ def plotLogGP(
     color: str = "darkblue",
     alpha_max: float = 1.0,
     n_sample: int = 0,
+    is_label: bool = True,
     **_: dict,
 ) -> None:
     """Plot a log-scale Gaussian process posterior."""
@@ -163,7 +165,7 @@ def plotLogGP(
                 color=color,
                 alpha=0.5,
                 lw=0.3,
-                label="sample path" if idx == 0 else None,
+                label="sample path" if idx == 0 and is_label else None,
             )
 
     ax.plot(
@@ -172,7 +174,7 @@ def plotLogGP(
         color=color,
         linestyle="dashed",
         lw=1.0,
-        label=r"$\pm 1\sigma$",
+        label=r"$\pm 1\sigma$" if is_label else None,
     )
     ax.plot(x_inp, np.exp(f_inp - sigma), color=color, linestyle="dashed", lw=1.0)
 

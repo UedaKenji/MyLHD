@@ -1,0 +1,201 @@
+
+
+mwscat_freq_wrong = [
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    500,
+    900,
+    1300,
+    1500,
+    1700,
+    1800,
+    1900,
+    2000,
+    2100,
+    2200,
+    2300,
+    2400,
+    2500,
+    2600,
+    2700,
+    2800,
+    2825,
+    2875,
+    2925,
+    2975,
+    3025,
+    3075,
+    3125,
+    3175,
+]
+mwscat2_freq_wrong = [
+    3200,
+    3300,
+    3400,
+    3500,
+    3600,
+    3700,
+    3800,
+    3900,
+    4000,
+    4100,
+    4200,
+    4300,
+    4500,
+    4700,
+    5100,
+    5500,
+    None,
+    None,
+    1000,
+    1300,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+]
+
+
+mwscat_freq = [
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    500,
+    900,
+    1300,
+    1500,
+    1700,
+    1800,
+    1900,
+    2000,
+    2100,
+    2200,
+    2300,
+    2400,
+    2500,
+    2600,
+    2700,
+    2800,
+    3200,
+    3300,
+    3400,
+    3500,
+    3600,
+    3700,
+    3800,
+    3900,
+]
+mwscat2_freq_latest = [
+    4000,
+    4100,
+    4200,
+    4300,
+    4500,
+    4700,
+    5100,
+    5500,
+    2825,
+    2875,
+    2925,
+    2975,
+    3025,
+    3075,
+    3125,
+    3175,
+    None,
+    None,
+    700,
+    1000,
+    1300,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+]
+
+mwscat2_freq_before_195086 = [
+    4000,
+    4100,
+    4200,
+    4300,
+    4500,
+    4700,
+    5100,
+    5500,
+    2825,
+    2875,
+    2925,
+    2975,
+    3025,
+    3075,
+    3125,
+    3175,
+    None,
+    None,
+    1000,
+    1300,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+]
+
+mwscat_effective_channels = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 
+                             25, 26, 27, 28, 29, 30, 31, 32]
+
+mwscat2_effective_channels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+
+
+def get_freqlist(diag: str="mwscat", shot: int=None) -> list:
+    """Get the frequency for a given MWSCAT channel and shot number.
+    Args:
+        diag (str): "mwscat" or "mwscat2"
+        shot (int): Shot number
+    Returns:
+        list: List of frequencies for each channel
+    """
+    if diag == "mwscat":
+        return mwscat_freq
+    elif diag == "mwscat2":
+        if shot is not None and shot < 195086:
+            return mwscat2_freq_before_195086
+        else:
+            return mwscat2_freq_latest
+    else:
+        raise ValueError("diag must be 'mwscat' or 'mwscat2'")
+
+
