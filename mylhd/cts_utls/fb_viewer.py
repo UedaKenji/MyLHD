@@ -25,7 +25,7 @@ mwscat_effective_channels = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 
 
 mwscat2_effective_channels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
 
-
+get_freqlist = filter_list.get_freqlist 
 
 def get_latest_shot_num(shotno_start):
     """
@@ -217,11 +217,12 @@ def plot_mwscat_all(
 
 
 def plot_mwscat_all2(
-    shot_num: int,
-    digi_name: str,  # 'mwscat' or 'mwscat2'
+    shotno: int,
+    digi: str,  # 'mwscat' or 'mwscat2'
     start_time: float = None,
     end_time: float = None,
-    figsize=(25, 15),
+    plot_show: bool = True,
+    axs=None,
 ):
     """
     Plot all channels of mwscat or mwscat2 data.
@@ -241,8 +242,19 @@ def plot_mwscat_all2(
 
     """
     retriever = LHDRetriever()
+    if plot_show == False:
+        plt.ioff()
+    else:
+        plt.ion()
 
-    fig, axs = plt.subplots(8, 4, figsize=figsize, sharex=True)
+    if axs is None:
+        fig, axs = plt.subplots(8, 4, figsize=(25, 15), sharex=True)
+    else:
+        axs = axs
+        fig = axs[0, 0].get_figure()
+
+    freq_list = filter_list.get_freqlist(digi, shotno)
+    print()
 
     for i in range(32):
         icol, irow = int(i / 4), int(i % 4)
@@ -250,20 +262,23 @@ def plot_mwscat_all2(
 
         ch_i = i + 1
 
-        data = retriever.retrieve_data(diag=digi_name, shotno=shot_num, subshot=1, channel=ch_i, time_axis=True)
+        data = retriever.retrieve_data(diag=digi, shotno=shotno, subshot=1, channel=ch_i, time_axis=True)
         val: np.ndarray = data.get_val()
         timedata0: np.ndarray = data.time
 
+        offset = np.mean(val[timedata0 < 2.0])
+
+
         if start_time is not None:
-            start_index = np.where(timedata0 > start_time)[0][0]
-            xmin = start_time
+            start_index = np.argmin(np.abs(timedata0 - start_time))
+            xmin = timedata0[start_index]
         else:
             start_index = None
             xmin = timedata0[0]
 
         if end_time is not None:
-            end_index = np.where(timedata0 > end_time)[0][0]
-            xmax = end_time
+            end_index = np.argmin(np.abs(timedata0 - end_time))
+            xmax = timedata0[end_index]
         else:
             end_index = None
             xmax = timedata0[-1]
@@ -273,19 +288,35 @@ def plot_mwscat_all2(
         n = int(timedata0[start_index:end_index].size / 2000)
 
         sl = slice(start_index, end_index, n)
-        ax.plot(timedata0[sl], sig_voltdata[sl])
-        ax.set_title("ch" + str(i + 1) + ": " + str(freq_list[digi_name][i])[:4] + " MHz")
+        sig_voltdata2 = sig_voltdata[sl] - offset
+        ax.plot(timedata0[sl], sig_voltdata2)
+        ax.set_title("ch" + str(i + 1) + ": " + str(freq_list[i])[:4] + " MHz")
         ax.set_xlim(xmin, xmax)
+
+        ymin, ymax = np.percentile(sig_voltdata2, [0.5, 99.5])
+
+        if ymax - ymin < 0.05:
+            ymin -= 0.03
+            ymax += 0.03
+        ax.set_ylim(ymin, ymax)
+
+        #グラフの右上のoffsetの値をテキストとして表示
+        ax.text(0.95, 0.9, f"offset: {offset:.4f} V", transform=ax.transAxes, fontsize=12, ha='right', va='top')
 
         if icol == 7:
             ax.set_xlabel("time [sec]")
         if irow == 0:
             ax.set_ylabel("Signal [V]")
+        ax.axhline(0, color="black", linestyle="--", linewidth=1, alpha=0.8)
+        # y軸を反転
+        ax.invert_yaxis()
+        # 縦のグリッド線を追加
+        ax.grid(axis="x", linestyle="--", alpha=1, linewidth=1)
 
-    figname = str(shot_num) + "_" + digi_name
     fig.tight_layout(rect=[0, 0, 1, 0.96])
-    fig.suptitle(figname, fontsize=25)
+
     return fig, axs
+
 
 
 def plot_mwscat_map(

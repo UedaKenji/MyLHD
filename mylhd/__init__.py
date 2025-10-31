@@ -15,6 +15,12 @@ from . import anadata, cts_utls, labcom_retrieve, thomson_gp
 
 # Expose key classes at package level
 from .anadata import KaisekiData
+from .anadata_storage import (
+    KaisekiDataSnapshot,
+    KaisekiDataValidationError,
+    export_kaiseki_data,
+    import_kaiseki_data,
+)
 from .labcom_retrieve import LHDData, LHDRetriever
 from .thomson_gp import ThomsonGP, ThomsonGPMultiPhase
 
@@ -32,4 +38,8 @@ __all__ = [
     "LHDData",
     "ThomsonGP",
     "ThomsonGPMultiPhase",
+    "KaisekiDataSnapshot",
+    "KaisekiDataValidationError",
+    "export_kaiseki_data",
+    "import_kaiseki_data",
 ]

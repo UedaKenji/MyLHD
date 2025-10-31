@@ -7,7 +7,7 @@ import re
 import string
 import time
 import traceback
-from typing import Callable, Optional
+from typing import Callable, Mapping, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -80,6 +80,7 @@ class KaisekiData:
         """
         read kaiseki data from open data server.
         """
+        cls.shotno = shotno
         url = BASEURL % (diag, shotno, subno)
         http = urllib3.PoolManager()
         try:
@@ -111,6 +112,7 @@ class KaisekiData:
         """
         read kaiseki data from Kaiseki Server
         """
+        cls.shotno = shotno
         filename = randfilename(10)
         data = None
         try:
@@ -135,6 +137,8 @@ class KaisekiData:
     # However it might consume memory and cpu power for large data.
 
     def __init__(self, filename=None, fileio=None):
+        self.metadata = {}
+        self.schema_version = 1
 
         if filename:
             self.load(filename)
@@ -222,7 +226,7 @@ class KaisekiData:
             name = h.get("name")
             date = h.get("date")
             shotno = h.get("shotno")
-            subno = h.get("subshotno")
+            subno = h.get("subshotno", 1)
             dimno = h.get("dimno")
             dimsizes = h.get("dimsize")
             valno = h.get("valno")
@@ -234,8 +238,8 @@ class KaisekiData:
                 subno = 1
             self.name = name.strip("' ")
             self.date = date.strip("' ")
-            self.shotno = int(shotno)
-            self.subno = int(subno)
+            self.shotno = int(shotno.strip("' ")) 
+            self.subno = int(subno) 
             self.dimno = int(dimno)
             self.valno = int(valno)
             self.dimnames = [c.strip("' ") for c in dimnames.split(",")]
@@ -244,6 +248,12 @@ class KaisekiData:
             self.valunits = [c.strip("' ") for c in valunits.split(",")]
             self.dimsizes = [int(c.strip()) for c in dimsizes.split(",")]
             self.comment = comment
+            self.metadata = {}
+            self.schema_version = 1
+
+
+            if len(data.shape) == 1:
+                data = data.reshape((1, data.shape[0]))
 
             if KaisekiData.force_sort:
                 key = []
@@ -260,6 +270,11 @@ class KaisekiData:
             raise Exception("Illegal Format")
 
     def _init(self):
+
+        if not hasattr(self, "metadata"):
+            self.metadata = {}
+        if not hasattr(self, "schema_version"):
+            self.schema_version = 1
 
         self.dimname_idx = {}
         for idx, n in enumerate(self.dimnames):
@@ -466,6 +481,58 @@ class KaisekiData:
         """
         self.show()
         print(self.comment)
+
+    @classmethod
+    def from_payload(cls, payload: Mapping[str, object]) -> "KaisekiData":
+        """
+        Instantiate a :class:`KaisekiData` object from a serialized payload.
+
+        The payload is validated using :func:`mylhd.anadata_storage.validate_payload`.
+        """
+        from .anadata_storage import instantiate_from_payload
+
+        return instantiate_from_payload(payload, cls=cls)
+
+    @classmethod
+    def from_local_file(cls, path: Union[str, os.PathLike]) -> "KaisekiData":
+        """
+        Restore a :class:`KaisekiData` object serialized via ``export_local``.
+        """
+        from .anadata_storage import import_kaiseki_data
+
+        return import_kaiseki_data(path, cls=cls)
+
+    def to_snapshot(self, *, metadata: Optional[Mapping[str, object]] = None):
+        """
+        Create a :class:`mylhd.anadata_storage.KaisekiDataSnapshot` for this object.
+        """
+        from .anadata_storage import KaisekiDataSnapshot
+
+        return KaisekiDataSnapshot.from_kaiseki(self, metadata=metadata)
+
+    def export_local(
+        self,
+        path: Union[str, os.PathLike],
+        *,
+        metadata: Optional[Mapping[str, object]] = None,
+        overwrite: bool = False,
+    ):
+        """
+        Serialize this dataset to a local pickle file.
+
+        Parameters
+        ----------
+        path:
+            Destination path for the pickle file.
+        metadata:
+            Optional additional metadata to persist (defaults to ``self.metadata``).
+        overwrite:
+            Overwrite an existing file when ``True``.
+        """
+        from .anadata_storage import export_kaiseki_data
+
+        payload_metadata = metadata if metadata is not None else getattr(self, "metadata", None)
+        return export_kaiseki_data(self, path, metadata=payload_metadata, overwrite=overwrite)
 
 
 def wait_for_opendata(

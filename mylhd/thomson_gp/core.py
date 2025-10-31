@@ -782,7 +782,7 @@ class ThomsonGPCore:
                 return 0.5 * first + 0.5 * second
 
             res = minimize(Psi, x0=0.5, method="Nelder-Mead", options={"disp": False})
-
+    
             xi = res.x[0]
 
             a += xi * delta_a
