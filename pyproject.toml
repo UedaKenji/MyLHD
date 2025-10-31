@@ -54,7 +54,11 @@ Homepage = "https://github.com/UedaKenji/MyLHD"
 Repository = "https://github.com/UedaKenji/MyLHD.git"
 Issues = "https://github.com/UedaKenji/MyLHD/issues"
 
+[tool.setuptools]
+package-dir = {"" = "src"}
+
 [tool.setuptools.packages.find]
+where = ["src"]
 include = ["mylhd*"]
 
 [tool.setuptools.package-data]
