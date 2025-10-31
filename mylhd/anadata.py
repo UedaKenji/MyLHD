@@ -238,8 +238,8 @@ class KaisekiData:
                 subno = 1
             self.name = name.strip("' ")
             self.date = date.strip("' ")
-            self.shotno = int(shotno.strip("' ")) 
-            self.subno = int(subno) 
+            self.shotno = int(shotno.strip("' "))
+            self.subno = int(subno)
             self.dimno = int(dimno)
             self.valno = int(valno)
             self.dimnames = [c.strip("' ") for c in dimnames.split(",")]
@@ -250,7 +250,6 @@ class KaisekiData:
             self.comment = comment
             self.metadata = {}
             self.schema_version = 1
-
 
             if len(data.shape) == 1:
                 data = data.reshape((1, data.shape[0]))

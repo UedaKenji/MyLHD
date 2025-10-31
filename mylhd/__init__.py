@@ -1,7 +1,7 @@
 """
 mylhd - LHD Data Collection and Analysis Package
 
-A comprehensive Python package for collecting and analyzing data from 
+A comprehensive Python package for collecting and analyzing data from
 the Large Helical Device (LHD) plasma physics experiment.
 
 Modules:

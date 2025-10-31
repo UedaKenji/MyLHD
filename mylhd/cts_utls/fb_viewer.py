@@ -12,7 +12,6 @@ from scipy.signal import find_peaks, medfilt
 from .. import anadata
 from ..anadata import KaisekiData
 from ..labcom_retrieve import LHDData, LHDRetriever
-
 from . import filter_list
 
 plt.rcParams["font.size"] = 12  # 全体のフォントサイズが変更されます。
@@ -20,12 +19,37 @@ plt.rcParams["xtick.direction"] = "in"  # 目盛り線の向き、内側"in"か�
 plt.rcParams["ytick.direction"] = "in"
 
 
-mwscat_effective_channels = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 
-                             25, 26, 27, 28, 29, 30, 31, 32]
+mwscat_effective_channels = [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+]
 
 mwscat2_effective_channels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
 
-get_freqlist = filter_list.get_freqlist 
+get_freqlist = filter_list.get_freqlist
+
 
 def get_latest_shot_num(shotno_start):
     """
@@ -161,7 +185,6 @@ def plot_mwscat_all(
 
         offset = np.mean(val[timedata0 < 2.0])
 
-
         if start_time is not None:
             start_index = np.argmin(np.abs(timedata0 - start_time))
             xmin = timedata0[start_index]
@@ -193,8 +216,8 @@ def plot_mwscat_all(
             ymax += 0.03
         ax.set_ylim(ymin, ymax)
 
-        #グラフの右上のoffsetの値をテキストとして表示
-        ax.text(0.95, 0.9, f"offset: {offset:.4f} V", transform=ax.transAxes, fontsize=12, ha='right', va='top')
+        # グラフの右上のoffsetの値をテキストとして表示
+        ax.text(0.95, 0.9, f"offset: {offset:.4f} V", transform=ax.transAxes, fontsize=12, ha="right", va="top")
 
         if icol == 7:
             ax.set_xlabel("time [sec]")
@@ -268,7 +291,6 @@ def plot_mwscat_all2(
 
         offset = np.mean(val[timedata0 < 2.0])
 
-
         if start_time is not None:
             start_index = np.argmin(np.abs(timedata0 - start_time))
             xmin = timedata0[start_index]
@@ -300,8 +322,8 @@ def plot_mwscat_all2(
             ymax += 0.03
         ax.set_ylim(ymin, ymax)
 
-        #グラフの右上のoffsetの値をテキストとして表示
-        ax.text(0.95, 0.9, f"offset: {offset:.4f} V", transform=ax.transAxes, fontsize=12, ha='right', va='top')
+        # グラフの右上のoffsetの値をテキストとして表示
+        ax.text(0.95, 0.9, f"offset: {offset:.4f} V", transform=ax.transAxes, fontsize=12, ha="right", va="top")
 
         if icol == 7:
             ax.set_xlabel("time [sec]")
@@ -316,7 +338,6 @@ def plot_mwscat_all2(
     fig.tight_layout(rect=[0, 0, 1, 0.96])
 
     return fig, axs
-
 
 
 def plot_mwscat_map(

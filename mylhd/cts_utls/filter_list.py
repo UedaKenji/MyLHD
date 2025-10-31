@@ -1,5 +1,3 @@
-
-
 mwscat_freq_wrong = [
     None,
     None,
@@ -174,13 +172,37 @@ mwscat2_freq_before_195086 = [
     None,
 ]
 
-mwscat_effective_channels = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 
-                             25, 26, 27, 28, 29, 30, 31, 32]
+mwscat_effective_channels = [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+]
 
 mwscat2_effective_channels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
 
 
-def get_freqlist(diag: str="mwscat", shot: int=None) -> list:
+def get_freqlist(diag: str = "mwscat", shot: int = None) -> list:
     """Get the frequency for a given MWSCAT channel and shot number.
     Args:
         diag (str): "mwscat" or "mwscat2"
@@ -197,5 +219,3 @@ def get_freqlist(diag: str="mwscat", shot: int=None) -> list:
             return mwscat2_freq_latest
     else:
         raise ValueError("diag must be 'mwscat' or 'mwscat2'")
-
-

@@ -7,9 +7,9 @@ new ``KaisekiData`` instance without relying on the remote open-data service.
 
 from __future__ import annotations
 
+import pickle
 from dataclasses import dataclass, field
 from pathlib import Path
-import pickle
 from typing import Any, Dict, Mapping, MutableMapping, Optional, Sequence, Tuple, Type, Union
 
 import numpy as np
@@ -58,14 +58,10 @@ def _iter_payload_collection(
 
     if isinstance(collection, (list, tuple)):
         if len(collection) != len(names):
-            raise KaisekiDataValidationError(
-                f"{label} must have length {len(names)} (got {len(collection)})."
-            )
+            raise KaisekiDataValidationError(f"{label} must have length {len(names)} (got {len(collection)}).")
         return list(collection)
 
-    raise KaisekiDataValidationError(
-        f"{label} must be a mapping or a sequence ordered as {names}."
-    )
+    raise KaisekiDataValidationError(f"{label} must be a mapping or a sequence ordered as {names}.")
 
 
 def _broadcast_dimension_array(
@@ -90,13 +86,9 @@ def _broadcast_dimension_array(
         arr = arr.reshape(shape)
         return np.broadcast_to(arr, target_shape)
 
-    if arr.ndim == len(dimsizes) and all(
-        (arr.shape[idx] in (1, dimsizes[idx])) for idx in range(len(dimsizes))
-    ):
+    if arr.ndim == len(dimsizes) and all((arr.shape[idx] in (1, dimsizes[idx])) for idx in range(len(dimsizes))):
         if arr.shape[axis] not in (1, dimsizes[axis]):
-            raise KaisekiDataValidationError(
-                f"Dimension data for '{name}' must vary along axis {axis}."
-            )
+            raise KaisekiDataValidationError(f"Dimension data for '{name}' must vary along axis {axis}.")
         return np.broadcast_to(arr, target_shape)
 
     if arr.size == dimsizes[axis]:
@@ -110,9 +102,7 @@ def _broadcast_dimension_array(
             ) from exc
         return np.broadcast_to(arr, target_shape)
 
-    raise KaisekiDataValidationError(
-        f"Dimension data for '{name}' cannot be broadcast to dimsizes {target_shape}."
-    )
+    raise KaisekiDataValidationError(f"Dimension data for '{name}' cannot be broadcast to dimsizes {target_shape}.")
 
 
 def _broadcast_value_array(
@@ -172,9 +162,7 @@ def _coerce_payload_data(
         if not isinstance(raw_data, np.ndarray):
             raw_data = np.asarray(raw_data)
         if raw_data.ndim != len(dimsizes) + 1:
-            raise KaisekiDataValidationError(
-                f"Data has {raw_data.ndim} dimensions but expected {len(dimsizes) + 1}."
-            )
+            raise KaisekiDataValidationError(f"Data has {raw_data.ndim} dimensions but expected {len(dimsizes) + 1}.")
 
         expected_last = len(dimnames) + len(valnames)
         expected_shape = tuple(dimsizes) + (expected_last,)
@@ -187,9 +175,7 @@ def _coerce_payload_data(
 
     # Expect split payload
     if dim_key is None or val_key is None:
-        raise KaisekiDataValidationError(
-            "Payload must provide both 'dimdata' and 'valdata' when 'data' is omitted."
-        )
+        raise KaisekiDataValidationError("Payload must provide both 'dimdata' and 'valdata' when 'data' is omitted.")
 
     dim_arrays = []
     dim_sources = _iter_payload_collection(payload[dim_key], names=dimnames, label="dimdata")
@@ -214,9 +200,7 @@ def _coerce_payload_data(
             )
         )
 
-    stacked = [
-        arr[..., np.newaxis] for arr in (*dim_arrays, *val_arrays)
-    ]
+    stacked = [arr[..., np.newaxis] for arr in (*dim_arrays, *val_arrays)]
     return np.concatenate(stacked, axis=-1)
 
 
@@ -308,8 +292,7 @@ def validate_payload(payload: Mapping[str, Any]) -> Dict[str, Any]:
 
     if len(valnames) != len(valunits):
         raise KaisekiDataValidationError(
-            "Lengths of valnames and valunits must match "
-            f"(got {len(valnames)} and {len(valunits)})."
+            "Lengths of valnames and valunits must match " f"(got {len(valnames)} and {len(valunits)})."
         )
 
     final_data = _coerce_payload_data(

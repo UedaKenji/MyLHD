@@ -7,7 +7,7 @@ name = "mylhd"
 version = "0.2.0"
 description = "LHD Data Collection and Analysis Package"
 readme = "CLAUDE.md"
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
     {name = "Kenji Ueda", email = "kenji.ueda@nifs.ac.jp"}

@@ -1,15 +1,13 @@
-import matplotlib.pyplot as plt
 from typing import Literal, cast
+
+import matplotlib.figure
+import matplotlib.pyplot as plt
+import mpl_toolkits.axes_grid1
 import numpy as np
 import numpy.typing as npt
 import rt1plotpy
-import mpl_toolkits.axes_grid1
-from matplotlib.colors import Normalize
-import matplotlib.figure
-from typing import Literal, cast
 from matplotlib.cm import ScalarMappable
-from matplotlib.colors import ListedColormap
-
+from matplotlib.colors import ListedColormap, Normalize
 
 rcparam_journal = {
     # --- 図全体の設定 ---
@@ -649,8 +647,9 @@ def cmap_line(ax: plt.Axes, x, y, C, cmap="viridis", cbar_title=None, **kwargs):
         cbar.set_label(cbar_title)
 
 
-import matplotlib.figure
 from typing import Literal, cast
+
+import matplotlib.figure
 
 
 def plt_subplots(

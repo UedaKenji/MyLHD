@@ -36,8 +36,8 @@ from .utils import Logger, callback_counter, numerical_differentiation_matrix
 class ThomsonGPCore:
     """Core Gaussian-process reconstruction logic for Thomson scattering data."""
 
-    TE_NAMES = ("te", "temperature", "electron temperature","temperature of electron" )
-    NE_NAMES = ("ne", "density", "electron density","density of electron" )
+    TE_NAMES = ("te", "temperature", "electron temperature", "temperature of electron")
+    NE_NAMES = ("ne", "density", "electron density", "density of electron")
     Te_unit: str = "keV"
     Ne_unit: str = "10^19 m^-3"
 
@@ -133,7 +133,6 @@ class ThomsonGPCore:
         self.dTe_origin = abs(self.data.get_val_data("dTe"))
         self.ne_origin = self.data.get_val_data("ne_calFIR")
         self.dne_origin = abs(self.data.get_val_data("dne_calFIR"))
-
 
         self.origin_shape = self.Te_origin.shape
 
@@ -452,7 +451,7 @@ class ThomsonGPCore:
 
         if not plot:
             return
-        
+
         fig, axs = plt.subplots(1, 2, figsize=(8, 10))
         vmax = np.percentile(self.Te_inp, 90) * 1.5
         axs[0].pcolormesh(self.realR_origin, self.time_origin, self.Te_origin, vmax=vmax, vmin=0)
@@ -533,7 +532,7 @@ class ThomsonGPCore:
             arrowprops=dict(arrowstyle="<-", color=color, lw=1.5),
         )
         return
-        
+
         for i, itime in enumerate(self.i_time_sep):
             y = self.time_inp[itime] - 0.5 * self.dt
             ax.axhline(y, color=color, lw=1)
@@ -546,7 +545,6 @@ class ThomsonGPCore:
                 xytext=(x - 0.1, y + 0.2),
                 arrowprops=dict(arrowstyle="<-", color=color, lw=1.5),
             )
-        
 
     def mainTe(
         self,
@@ -782,7 +780,7 @@ class ThomsonGPCore:
                 return 0.5 * first + 0.5 * second
 
             res = minimize(Psi, x0=0.5, method="Nelder-Mead", options={"disp": False})
-    
+
             xi = res.x[0]
 
             a += xi * delta_a

@@ -10,8 +10,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import ListedColormap
 
-from .plotting import axs_cbar, make_alpha_colormap, plotGP, plotLogGP
 from ..plot_utils import cmocean_balance
+from .plotting import axs_cbar, make_alpha_colormap, plotGP, plotLogGP
 
 if TYPE_CHECKING:
     from .core import ThomsonGPCore
@@ -346,24 +346,23 @@ class ThomsonGPVisualizer:
         cmap=None,
         colorbar=False,
     ) -> plt.Axes:
-        
-        
+
         if ax is None:
             fig, ax = plt.subplots(1, 1, figsize=(4, 8))
 
         res = self.get_func_properties(ValName, funckind, log)
 
-        if cmap in  ['cmocean_balance' ,'balance', 'cmo_balance', 'cmbalance', 'cm_balance']:
+        if cmap in ["cmocean_balance", "balance", "cmo_balance", "cmbalance", "cm_balance"]:
             cmap = cmocean_balance
 
-        f = res["f"]    
+        f = res["f"]
         ax_title = res["title"]
 
         xres = self.get_x_axis_properties(x_axis, ax)
 
         X = xres["X"]
         x_title = xres["x_title"]
-        rho_contour = True if rho_contour and xres["rho_contour"] else False 
+        rho_contour = True if rho_contour and xres["rho_contour"] else False
         ax.set_xlabel(x_title)
 
         im = ax.pcolormesh(X, self.time_inp, f, vmax=vmax, vmin=vmin, cmap=cmap)
@@ -379,13 +378,10 @@ class ThomsonGPVisualizer:
                 colors="black",
                 linewidths=0.5,
             )
-        
+
         return ax
-    
-    def get_func_properties(self: "ThomsonGPCore",
-            ValName: str,
-            FuncKind: str,
-            log: bool = False) -> dict:
+
+    def get_func_properties(self: "ThomsonGPCore", ValName: str, FuncKind: str, log: bool = False) -> dict:
         """
         Get function properties for plotting.
         Parameters:
@@ -397,14 +393,14 @@ class ThomsonGPVisualizer:
             title: The title for the plot.
         """
         ValName = self._valname(ValName)
-        kind_f = ['f', 'func', 'function', None]
-        kind_dfdr = ['dfdr',  'dr', 'df/dr']
-        kind_dfdt = ['dfdt',  'dt', 'df/dt']
+        kind_f = ["f", "func", "function", None]
+        kind_dfdr = ["dfdr", "dr", "df/dr"]
+        kind_dfdt = ["dfdt", "dt", "df/dt"]
         if ValName == "Te":
             if FuncKind in kind_f:
                 if log:
                     f = self.logTe_fit
-                    title = r"$\log T_e$_fit"+ r" $[ ]$"
+                    title = r"$\log T_e$_fit" + r" $[ ]$"
                 else:
                     f = np.exp(self.logTe_fit)
                     title = r"$T_e$_fit" + r" $\mathrm{[keV]}$"
@@ -428,10 +424,10 @@ class ThomsonGPVisualizer:
         elif ValName == "ne":
             if FuncKind in kind_f:
                 if log:
-                    f =  self.logNe_fit
+                    f = self.logNe_fit
                     title = r"$\log n_e$_fit" + r" $[ ]$"
                 else:
-                    f =  np.exp(self.logNe_fit)
+                    f = np.exp(self.logNe_fit)
                     title = r"$n_e$_fit $\mathrm{[10^{19}m^{-3}]}$"
             elif FuncKind in kind_dfdr:
                 if log:
@@ -451,14 +447,9 @@ class ThomsonGPVisualizer:
                 raise NameError('FuncKind must be "f" or "dfdr" or "dfdt"')
         else:
             raise NameError('ValName must be "ne" or "Te"')
-        return {
-            "f": f,
-            "title": title
-        }
-    
-    def get_x_axis_properties(self: "ThomsonGPCore",
-            x_axis: str,
-            ax:plt.Axes = None) -> dict:
+        return {"f": f, "title": title}
+
+    def get_x_axis_properties(self: "ThomsonGPCore", x_axis: str, ax: plt.Axes = None) -> dict:
         """
         Get x-axis properties for plotting.
         Parameters:
@@ -472,7 +463,7 @@ class ThomsonGPVisualizer:
         if ax is not None:
             xlim_is_default = ax.get_xlim() == (0, 1.0)
             ylim_is_default = ax.get_ylim() == (0, 1.0)
-        
+
         if x_axis in ["rho_vac", "reff/a99_vac"]:
             X = self.rho_vac
             x_title = r"${r_\mathrm{eff}/a_{99}}$ (vacuum)"
@@ -498,11 +489,7 @@ class ThomsonGPVisualizer:
                 ax.set_ylim(self.realR_origin.min(), self.realR_origin.max())
         else:
             raise ValueError('x_axis must be "rho" or "rho_vac" or "R"')
-        return {
-            "X": X,
-            "x_title": x_title,
-            "rho_contour": rho_contour
-        }
+        return {"X": X, "x_title": x_title, "rho_contour": rho_contour}
 
     def plotProfile(
         self: "ThomsonGPCore",
@@ -769,7 +756,7 @@ class ThomsonGPVisualizer:
         add_noise: bool = False,
         interpolation: bool = False,
         sampling: int = 0,
-        is_label: bool = True,  
+        is_label: bool = True,
     ):
         ValName = self._valname(ValName)
 
@@ -837,9 +824,7 @@ class ThomsonGPVisualizer:
 
         f = f[:, i]
 
-        ax.plot(self.time_inp, np.exp(f), 
-                label="logGP-fit" if is_label else None
-                , zorder=2, color=color)
+        ax.plot(self.time_inp, np.exp(f), label="logGP-fit" if is_label else None, zorder=2, color=color)
 
         noise = dy * sig_scale
 
@@ -916,7 +901,7 @@ class ThomsonGPVisualizer:
         color: str = "red",
         sampling: int = 0,
     ):
-        
+
         ValName = self._valname(ValName)
         if ValName == "Te":
             if DimName == "reff":
