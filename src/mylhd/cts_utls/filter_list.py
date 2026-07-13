@@ -172,6 +172,58 @@ mwscat2_freq_before_195086 = [
     None,
 ]
 
+mwscat_freq_before_148160 = [
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    500,
+    900,
+    1300,
+    1500,
+    1700,
+    1800,
+    1900,
+    2000,
+    2100,
+    2200,
+    2300,
+    2400,
+    2500,
+    2600,
+    2700,
+    2800,
+    3200,
+    3300,
+    3400,
+    3500,
+    3600,
+    3700,
+    3800,
+    3900,
+    4000,
+    4100,
+    4200,
+    4300,
+    4500,
+    4700,
+    5100,
+    5500,
+    2825,
+    2875,
+    2925,
+    2975,
+    3025,
+    3075,
+    3125,
+    3175,
+]
+
+
 mwscat_effective_channels = [
     9,
     10,
@@ -211,9 +263,14 @@ def get_freqlist(diag: str = "mwscat", shot: int = None) -> list:
         list: List of frequencies for each channel
     """
     if diag == "mwscat":
-        return mwscat_freq
+        if shot is not None and shot < 148160:
+            return mwscat_freq_before_148160
+        else:
+            return mwscat_freq
     elif diag == "mwscat2":
-        if shot is not None and shot < 195086:
+        if shot is not None and shot < 148160:
+            return [None]
+        elif shot is not None and shot < 195086:
             return mwscat2_freq_before_195086
         else:
             return mwscat2_freq_latest

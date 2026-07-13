@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import mpl_toolkits.axes_grid1
 import numpy as np
 import numpy.typing as npt
-import rt1plotpy
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import ListedColormap, Normalize
 

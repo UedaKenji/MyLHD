@@ -360,11 +360,24 @@ def plot_mwscat_map(
 
     _print(f"Starting plot_map for shot_num: {shot_num}")
     retriever = LHDRetriever()
+    mwscat_freq = get_freqlist("mwscat", shot_num)
+    mwscat2_freq = get_freqlist("mwscat2", shot_num)
     try:
         _print("Retrieving mwscat channels...")
-        mwscat = retriever.retrieve_multiple_channels(diag_name="mwscat", shot=shot_num, channels=np.arange(1, 33))
-        _print("Retrieving mwscat2 channels...")
-        mwscat2 = retriever.retrieve_multiple_channels(diag_name="mwscat2", shot=shot_num, channels=np.arange(1, 33))
+        mwscat = retriever.retrieve_multiple_channels(
+            diag_name="mwscat",
+            shot=shot_num,
+            channels=np.arange(1, len(mwscat_freq) + 1),
+        )
+
+        mwscat2 = {}
+        if any(freq is not None for freq in mwscat2_freq):
+            _print("Retrieving mwscat2 channels...")
+            mwscat2 = retriever.retrieve_multiple_channels(
+                diag_name="mwscat2",
+                shot=shot_num,
+                channels=np.arange(1, len(mwscat2_freq) + 1),
+            )
     except Exception as e:
         _print(f"Error retrieving channels: {e}")
         return
@@ -532,7 +545,7 @@ def plot_mwscat_map(
         _print(f"Error during plotting: {e}")
 
 
-def take_mwscat_all(shotno: int) -> KaisekiData:
+def take_mwscat_all(shotno: int, sort: bool = False) -> KaisekiData:
     flg = True
     kaisekidata = KaisekiData()
     kaisekidata.dimunits = ["s", "MHz"]
@@ -552,6 +565,8 @@ def take_mwscat_all(shotno: int) -> KaisekiData:
     kaisekidata.subno = 1
 
     retriever = LHDRetriever()
+    mwscat_freq = get_freqlist("mwscat", shotno)
+    mwscat2_freq = get_freqlist("mwscat2", shotno)
 
     for i, key in enumerate(mwscat_freq):
         if key is not None:
@@ -588,22 +603,21 @@ def take_mwscat_all(shotno: int) -> KaisekiData:
                     continue
 
     for i, key in enumerate(mwscat2_freq):
-        if key is not None:
-            try:
-                temp = retriever.retrieve_data(
-                    diag="mwscat2",
-                    shotno=shotno,
-                    subshot=1,
-                    channel=i + 1,
-                    time_axis=False,
-                )
-                data["Freq"].append(key)
-                data[key] = temp.val
-            except:
-                continue
-
-            if key == 5500:
-                break
+        if key is None:
+            break
+        try:
+            temp = retriever.retrieve_data(
+                diag="mwscat2",
+                shotno=shotno,
+                subshot=1,
+                channel=i + 1,
+                time_axis=False,
+            )
+            data["Freq"].append(key)
+            data[key] = temp.val
+        except Exception as e:
+            print(f"Error retrieving data for channel {i+1}: {e}")
+            continue
 
     kaisekidata.data = np.zeros((len(data["Time"]), len(data["Freq"])))
     for i, freq in enumerate(data["Freq"]):
@@ -611,6 +625,11 @@ def take_mwscat_all(shotno: int) -> KaisekiData:
 
     kaisekidata._time = data["Time"]
     kaisekidata.freq = np.array(data["Freq"])
+
+    if sort:
+        sort_indices = np.argsort(kaisekidata.freq)
+        kaisekidata.freq = kaisekidata.freq[sort_indices]
+        kaisekidata.data = kaisekidata.data[:, sort_indices]
 
     del data
 

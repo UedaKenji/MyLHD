@@ -8,10 +8,11 @@ Modules:
 - anadata: Core module for LHD kaiseki data format parsing
 - labcom_retrieve: Package for retrieving measurement data from LABCOM systems
 - cts_utls: CTS analysis tools and utilities
+- utils: Shared utility helpers used across the package
 """
 
 # Import main classes and functions for easy access
-from . import anadata, cts_utls, labcom_retrieve, thomson_gp
+from . import anadata, cts_utls, labcom_retrieve, thomson_gp, utils
 
 # Expose key classes at package level
 from .anadata import KaisekiData
@@ -23,6 +24,7 @@ from .anadata_storage import (
 )
 from .labcom_retrieve import LHDData, LHDRetriever
 from .thomson_gp import ThomsonGP, ThomsonGPMultiPhase
+from .utils import detect_data, map_onoff, wait_for_opendata
 
 __version__ = "0.2.0"
 __author__ = "Kenji Ueda"
@@ -33,6 +35,7 @@ __all__ = [
     "labcom_retrieve",
     "cts_utls",
     "thomson_gp",
+    "utils",
     "KaisekiData",
     "LHDRetriever",
     "LHDData",
@@ -42,4 +45,7 @@ __all__ = [
     "KaisekiDataValidationError",
     "export_kaiseki_data",
     "import_kaiseki_data",
+    "map_onoff",
+    "wait_for_opendata",
+    "detect_data",
 ]

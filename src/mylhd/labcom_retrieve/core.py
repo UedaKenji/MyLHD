@@ -51,6 +51,22 @@ class LHDData:
             vresolution = self.metadata["VResolution"]
         elif "VCoefficient1" in self.metadata:
             vresolution = self.metadata["VCoefficient1"]
+        elif "RangeHigh" in self.metadata and "RangeLow" in self.metadata:
+            # Map the integer acquisition range onto the declared voltage range.
+            try:
+                range_high = float(self.metadata["RangeHigh"])
+                range_low = float(self.metadata["RangeLow"])
+            except (ValueError, TypeError):
+                raise ValueError("RangeHigh or RangeLow values are not numeric") from None
+
+            image_type = str(self.metadata.get("ImageType", "")).lower()
+            integer_types = {"int8": np.int8, "int16": np.int16}
+            if image_type not in integer_types:
+                raise ValueError(f"Unsupported ImageType for range conversion: {image_type!r}")
+
+            limits = np.iinfo(integer_types[image_type])
+            scale = (range_high - range_low) / (limits.max - limits.min)
+            return (self.data.astype(np.float64) - limits.min) * scale + range_low
         else:
             raise ValueError("VResolution or VCoefficient1 not found in metadata. Cannot convert to voltage.")
         # metadataにVOffsetあるいはVCoefficient0があればその値を使う

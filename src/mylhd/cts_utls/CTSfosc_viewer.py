@@ -187,7 +187,7 @@ def plot_all(
 
     tmp_time = time.time()
 
-    fs = float(data.metadata["MIN_SAMPLE_RATE"])
+    fs = float(data.metadata["HORZ_SAMPLE_RATE"])
     f, t, Zxx = stft(
         data.val,
         fs=fs,
@@ -215,7 +215,7 @@ def plot_all(
 
     Zxx_db = 20 * (np.log10(abs(Zxx_r) + 1e-12))
     vmax = np.percentile(Zxx_db, 99.9)
-    vmin = np.percentile(Zxx_db, 30)
+    vmin = np.percentile(Zxx_db, 5)
 
     fig, axes = plot_with_marginals(
         data2d=Zxx_db,  # dB スケール
@@ -265,7 +265,7 @@ def plot_all2(
         dtype=np.int8,  # ← int8ではなくfloatで
     )
     ...
-    fs = float(data.metadata["MIN_SAMPLE_RATE"])
+    fs = float(data.metadata["SamplingClock"])
     f, t, Zxx = stft(
         data.val,
         fs=fs,
