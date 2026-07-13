@@ -1,202 +1,153 @@
 # KaisekiData 利用ガイド
 
-`KaisekiData` の基本的な使い方（オンラインのオープンデータから取得する場合）と、ローカルで解析した結果をインポート・保存する場合の双方について解説します。内部実装の詳細には踏み込まず、ユーザーが利用する公開インターフェースのみを整理しています。
+`KaisekiData` は、LHD の解析データを「次元軸」「物理量」「単位」「ショット情報」とともに扱うためのコンテナです。オープンデータからの取得だけでなく、手元で生成した解析結果の格納と保存にも利用できます。
 
----
+- サンプル: [kaiseki_data_sample.ipynb](../examples/kaiseki_data_sample.ipynb)
+- パッケージ概要: [README](../README.md)
 
 ## 1. オープンデータから取得する
 
-### 1.1 即時取得
 ```python
 from mylhd import KaisekiData
 
-ts = KaisekiData.retrieve_opendata(diag="tsmap_calib", shotno=190600, subno=1)
+data = KaisekiData.retrieve_opendata(
+    diag="tsmap_calib",
+    shotno=194042,
+    subno=1,
+)
 ```
 
-- `diag` には診断名、`shotno` / `subno` には対象ショット番号とサブショット番号を指定します。
-- 取得できない場合は `FileNotFoundError`、通信エラー時は `RuntimeError` が送出されます。
+取得にはネットワーク接続が必要です。データが存在しない場合は `FileNotFoundError`、通信や応答の問題は `RuntimeError` として通知されます。
 
-### 1.2 LABCOM サーバから取得
+計測直後など、データ公開まで待ちたい場合は `wait_for_opendata` を使います。
+
 ```python
-ts = KaisekiData.retrieve(diag="cts", shotno=190600, subno=1)
-```
-内部で `igetfile` コマンドが呼ばれるため、対応環境でのみ利用可能です。
+from mylhd import wait_for_opendata
 
-### 1.3 データ内容の確認
+data = wait_for_opendata(
+    diag="tsmap_calib",
+    shotno=194042,
+    subno=1,
+    retry_delay=60,
+)
+```
+
+この関数は成功するまで待機するため、終了条件が必要な処理では呼び出し側でタイムアウトを設けてください。
+
+## 2. 内容を確認する
+
 ```python
-ts.show()      # 名前や次元情報・単位を出力
-ts.info()      # 上記に加えてコメント欄も表示
+data.show()  # 名前、shot、shape、軸・値・単位
+data.info()  # show() の内容とコメント
 
-time = ts.time                # 代表的な時間軸（存在する場合）
-rho = ts.get_dim_data("rho")  # 軸名やインデックスで取得可能
-te = ts.get_val_data("Te")    # 値も名前または番号で取得
-unit = ts.get_val_unit("Te")  # 単位確認
+print(data.dimnames)
+print(data.valnames)
+print(data.data.shape)
 ```
 
-### 1.4 擬似的な辞書添字アクセス
+軸と値は名前またはインデックスで取得できます。
+
 ```python
-ts["Te"]      # == ts.get_val_data("Te")
-ts["Time"]    # == ts.get_dim_data("Time")
-ts[0]         # 最初の変数（ValName0）
+time = data.get_dim_data("Time")
+te = data.get_val_data("Te")
+
+time_unit = data.get_dim_unit("Time")
+te_unit = data.get_val_unit("Te")
+
+# 短縮記法
+assert data["Te"] is not None
+first_value = data[0]
 ```
 
-### 1.5 シンプルな可視化例
-```python
-import matplotlib.pyplot as plt
-plt.plot(ts.time, ts.get_val_data("Te")[:, 0])  # 例: 1 チャンネル目
-plt.xlabel("Time [s]")
-plt.ylabel("Te [keV]")
-plt.show()
-```
+`data.time` は `Time`、`time`、`TIME` など、対応する時間軸が存在する場合に使えます。軸名や値名は診断ごとに異なるため、最初に `show()` で確認してください。
 
-### 1.6 データのポーリング待ち
-計測直後でまだオープンデータが準備されていない場合は `wait_for_opendata` を利用します。
-```python
-from mylhd.anadata import wait_for_opendata
+## 3. ローカルの配列から作る
 
-ts = wait_for_opendata(diag="tsmap_calib", shotno=190600, subno=1, retry_delay=60)
-```
-指定秒数ごとにリトライし、利用可能になった段階で `KaisekiData` を返します。
+`from_payload` では、軸を `dimdata`、物理量を `valdata` として分けて渡せます。以下はネットワークなしで実行できる例です。
 
----
-
-## 2. 解析済みデータをローカルから生成する
-
-### 2.1 事前に準備するもの
-1. 軸名 (`dimnames`)、軸単位 (`dimunits`)  
-   例: `["Time", "rho"]` / `["s", "1"]`
-2. 変数名 (`valnames`)、変数単位 (`valunits`)  
-   例: `["Te", "ne"]` / `["keV", "1e19 m^-3"]`
-3. 軸ごとの長さ (`dimsizes`)  
-   例: `[n, m]`
-4. 実データ配列 (`data`)  
-   - shape は `(n, m, len(dimnames) + len(valnames))`  
-   - 最終次元を `[軸データ..., 値データ...]` の順に積む
-   - 例: `(n, m, 4)` の最後の軸 `[Time, rho, Te, ne]`
-
-### 2.2 Payload からの生成
 ```python
 import numpy as np
-from mylhd.anadata import KaisekiData
+from mylhd import KaisekiData
 
-n, m = 100, 32
-time = np.linspace(0, 1, n)
-rho = np.linspace(-1, 1, m)
-Te = np.random.rand(n, m)
-ne = np.random.rand(n, m)
-
-grid_time = np.repeat(time[:, None], m, axis=1)
-grid_rho = np.repeat(rho[None, :], n, axis=0)
-stacked = np.stack([grid_time, grid_rho, Te, ne], axis=-1)
+time = np.linspace(0.0, 1.0, 101)
+radius = np.linspace(-1.0, 1.0, 41)
+te = 2.0 * np.exp(-(radius[None, :] / 0.6) ** 2) * (1.0 + 0.1 * np.sin(2 * np.pi * time[:, None]))
 
 payload = {
     "schema_version": 1,
-    "name": "cts",
-    "shotno": 123456,
+    "name": "synthetic_profile",
+    "shotno": 0,
     "subno": 1,
     "dimnames": ["Time", "rho"],
     "dimunits": ["s", "1"],
-    "valnames": ["Te", "ne"],
-    "valunits": ["keV", "1e19 m^-3"],
-    "dimsizes": [n, m],
-    "data": stacked,
-    "comment": "local analysis result",
-    "metadata": {"source": "custom pipeline"},
-    "date": "2024-02-01",
+    "valnames": ["Te"],
+    "valunits": ["keV"],
+    "dimsizes": [time.size, radius.size],
+    "dimdata": [time, radius],
+    "valdata": [te],
+    "comment": "Documentation example",
+    "metadata": {"source": "synthetic"},
 }
 
-kdata = KaisekiData.from_payload(payload)
+local_data = KaisekiData.from_payload(payload)
 ```
 
-これで `kdata` は通常の `KaisekiData` と同じインターフェースで利用できます。
+重要な制約:
 
-### 2.3 `dimdata` / `valdata` を分けて指定する
-`payload["data"]` を自前で組み立てる代わりに、軸と値を別々に渡すこともできます。
+- `dimnames`、`dimunits`、`dimsizes` の要素数を一致させる。
+- `valnames` と `valunits` の要素数を一致させる。
+- `valdata` の各配列は `dimsizes` と同じ shape、またはそこへブロードキャスト可能な shape にする。
+- `dimdata` と `valdata` の並び順を、それぞれの名前リストと一致させる。
+
+不整合は `KaisekiDataValidationError` になります。
+
+## 4. 可視化する
+
+`KaisekiData` 自体は汎用コンテナなので、NumPy 配列を取り出して Matplotlib で描画します。
 
 ```python
-payload = {
-    "schema_version": 1,
-    "name": "cts",
-    "shotno": 123456,
-    "subno": 1,
-    "dimnames": ["Time", "rho"],
-    "dimunits": ["s", "1"],
-    "valnames": ["Te", "ne"],
-    "valunits": ["keV", "1e19 m^-3"],
-    "dimsizes": [n, m],
-    "dimdata": [
-        time,   # "Time" に対応。shape (n,) → 自動で (n, m) に拡張
-        rho,    # "rho"  に対応。shape (m,) → 自動で (n, m) に拡張
-    ],
-    "valdata": [
-        Te,     # "Te" に対応。shape (n, m)
-        ne,     # "ne" に対応。shape (n, m)
-    ],
-    "comment": "local analysis result",
-    "metadata": {"source": "custom pipeline"},
-}
+import matplotlib.pyplot as plt
 
-kdata = KaisekiData.from_payload(payload)
+fig, ax = plt.subplots()
+mesh = ax.pcolormesh(
+    local_data.get_dim_data("rho"),
+    local_data.time,
+    local_data["Te"],
+    shading="auto",
+)
+ax.set_xlabel("rho")
+ax.set_ylabel("Time [s]")
+fig.colorbar(mesh, ax=ax, label="Te [keV]")
 ```
 
-ポイント:
+## 5. 保存と復元
 
-- `dimdata` / `valdata` は **リストまたはタプル** で渡し、要素順を `dimnames` / `valnames` と一致させます（辞書形式も使用できますが、キー名は新しいスペルに合わせてください）。
-- 軸データは 1 次元配列でもかまいません（サイズが対応していれば自動的に `dimsizes` まで拡張されます）。
-- 値データは `dimsizes` と同じ形、または NumPy のブロードキャスト規則で拡張可能な形状であれば渡せます。
-
-この形式は、既存コードで軸ベクトルや物理量を個別に持っている場合に手軽です。
-
----
-
-## 3. ローカル保存と復元
-
-### 3.1 保存
 ```python
-kdata.export_local("outputs/cts_local.pkl", overwrite=True)
-```
-または関数版:
-```python
-from mylhd.anadata_storage import export_kaiseki_data
-export_kaiseki_data(kdata, "outputs/cts_local.pkl", overwrite=True)
-```
+path = local_data.export_local(
+    "outputs/synthetic_profile.pkl",
+    overwrite=True,
+)
 
-### 3.2 復元
-```python
-restored = KaisekiData.from_local_file("outputs/cts_local.pkl")
-```
-または関数版:
-```python
-from mylhd.anadata_storage import import_kaiseki_data
-restored = import_kaiseki_data("outputs/cts_local.pkl")
+restored = KaisekiData.from_local_file(path)
 ```
 
-復元したインスタンスは元の `kdata` と同じ内容を保持します。
+`metadata` には解析条件、作成コードのバージョン、入力データの由来などを記録すると再現性を高められます。
 
-### 3.3 メタデータ活用
-`metadata` に辞書を渡すと、解析条件や作成者などを保存できます。`restored.metadata` で取り出せるため、再解析やログ管理に有用です。
+> [!WARNING]
+> ローカル保存形式は Python の pickle を使用します。信頼できない `.pkl` ファイルは読み込まないでください。
 
----
+## 6. どの取得方法を使うか
 
-## 4. スナップショット API（必要に応じて）
-- `snapshot = kdata.to_snapshot()`  
-  出力された `snapshot` は `snapshot.to_payload()` で辞書化でき、独自のファイル形式に変換する際に便利です。
-- 関数版 `mylhd.anadata_storage.KaisekiDataSnapshot.from_kaiseki(kdata)` も同等の役割を持ちますが、通常利用では不要です。
+| 方法 | 用途 | 追加要件 |
+| --- | --- | --- |
+| `KaisekiData.retrieve_opendata(...)` | 公開済み LHD オープンデータ | ネットワーク |
+| `KaisekiData.retrieve(...)` | `igetfile` を使う環境内取得 | LHD 内部環境と `igetfile` |
+| `KaisekiData.from_payload(...)` | 手元の NumPy 配列を共通形式にする | なし |
+| `KaisekiData.from_local_file(...)` | `export_local` の結果を復元する | 信頼できる pickle ファイル |
 
----
+## 7. よくある問題
 
-## 5. バリデーションとエラーハンドリング
-- `from_payload` や `import_kaiseki_data` の内部で整合性チェックが実行され、shape や軸情報が一致しない場合は例外が送出されます。
-- Pickle ファイルは `overwrite=False` が既定値のため、上書きする際は `overwrite=True` を指定してください。
-- ネットワークアクセスが必要な API は `urllib3` を利用しているため、環境によってはプロキシ設定などが必要になる場合があります。
-
----
-
-## 6. ヒントとベストプラクティス
-- オープンデータ API のレスポンスが空の場合は、ショット番号や診断名を再確認するか、少し時間を置いて再取得してください。
-- 自前データの作成では、軸データを直接 `data` 配列に埋め込む点に注意してください（別途 `dimdata` を渡す形式ではありません）。
-- 長期的な保管や共有には、`metadata` に実験条件・解析パラメータ・コードバージョンなどを残しておくと再現性が高まります。
-
----
-
-これらの API を組み合わせることで、オンライン／オフラインを問わず `KaisekiData` を柔軟に扱えます。困った点があれば issue などでフィードバックをお寄せください。
+- `Time Key Not Found`: 診断に時間軸がないか、軸名が既知の表記ではありません。`dimnames` を確認し、`get_dim_data(軸名)` を使います。
+- `Index Range Error`: 指定した軸名・値名が存在しません。`show()` で名前を確認します。
+- 404 または `FileNotFoundError`: 診断名、ショット番号、サブショット番号、公開状況を確認します。
+- shape のバリデーションエラー: `dimsizes` と `dimdata` / `valdata` の shape を確認します。
